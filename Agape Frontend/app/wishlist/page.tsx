@@ -12,12 +12,14 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
+import { SlideButton } from '@/components/ui/animated-button'
+import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect'
 import { ProductCard } from '@/components/product-card'
 import { EmptyWishlist } from '@/components/empty-state'
 import { useWishlist } from '@/lib/contexts/wishlist-context'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/loading-skeleton'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function WishlistPage() {
@@ -47,7 +49,7 @@ export default function WishlistPage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-muted/50 to-background">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-background">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <Image
@@ -73,9 +75,13 @@ export default function WishlistPage() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="font-display text-4xl md:text-6xl font-bold mb-6">
-                    My Wishlist
-                  </h1>
+                  <TypewriterEffectSmooth
+                    words={[
+                      { text: 'My', className: 'text-foreground' },
+                      { text: 'Wishlist', className: 'text-primary' },
+                    ]}
+                    className="mb-6"
+                  />
                   <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8">
                     {!mounted || isLoading ? 'Loading your saved items...' : `${itemCount} item${itemCount !== 1 ? 's' : ''} saved for later`}
                   </p>
@@ -144,9 +150,9 @@ export default function WishlistPage() {
 
                 {/* Continue Shopping */}
                 <div className="mt-12 text-center">
-                  <Button onClick={handleShopClick} size="lg">
+                  <SlideButton onClick={handleShopClick} size="lg">
                     Continue Shopping
-                  </Button>
+                  </SlideButton>
                 </div>
               </>
             )}

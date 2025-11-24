@@ -48,18 +48,16 @@ export default function ContactPage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-muted/50 to-background">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-background">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <Image
               src="/shop-page-background.jpeg"
               alt="Contact us"
               fill
-              className="object-cover"
+              className="object-cover opacity-20"
               priority
             />
-            {/* Subtle overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-black/40" />
           </div>
 
           {/* Hero Content */}
@@ -77,9 +75,9 @@ export default function ContactPage() {
 
             <TypewriterEffectSmooth 
               words={[
-                { text: "Get", className: "text-primary font-display font-bold" },
+                { text: "Get", className: "text-foreground font-display font-bold" },
                 { text: "In", className: "text-foreground font-display font-bold" },
-                { text: "Touch", className: "bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent font-display font-bold" },
+                { text: "Touch", className: "bg-gradient-to-r from-accent via-secondary to-primary bg-clip-text text-transparent font-display font-bold" },
               ]}
               className="justify-start mb-6"
               cursorClassName="bg-primary"

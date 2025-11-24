@@ -9,8 +9,11 @@
 import * as React from 'react'
 import { motion, HTMLMotionProps } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
-import { Button, ButtonProps } from './button'
+import { Button, buttonVariants } from './button'
 import { cn } from '@/lib/utils'
+import { VariantProps } from 'class-variance-authority'
+
+export type ButtonProps = React.ComponentProps<typeof Button> & VariantProps<typeof buttonVariants>
 
 interface AnimatedButtonProps extends ButtonProps {
   loading?: boolean

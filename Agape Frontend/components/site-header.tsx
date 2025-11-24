@@ -156,9 +156,9 @@ export function SiteHeader() {
           <div className="absolute top-0 left-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-10 w-32 h-32 bg-accent/20 rounded-full blur-3xl" />
           <div className="relative flex h-16 items-center justify-between px-4 sm:px-6 md:px-8 w-full">
-            {/* Logo - Left - Dynamic text size with gradient */}
+            {/* Logo - Left - Dynamic text size */}
             <Link href="/" className="flex items-center flex-shrink-0 z-10">
-              <span className="font-display text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+              <span className="font-display text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight text-black dark:text-white">
                 {SITE_CONFIG.name}
               </span>
             </Link>

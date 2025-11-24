@@ -84,18 +84,16 @@ export default function ShopPage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-background">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <Image
               src="/shop-page-background.jpeg"
               alt="Lace fabric collection"
               fill
-              className="object-cover"
+              className="object-cover opacity-50"
               priority
             />
-            {/* Subtle overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/14 via-black/10 to-background/34" />
           </div>
 
           {/* Hero Content */}
@@ -113,9 +111,9 @@ export default function ShopPage() {
 
             <TypewriterEffectSmooth 
               words={[
-                { text: "Shop", className: "text-primary font-display font-bold" },
+                { text: "Shop", className: "text-foreground font-display font-bold" },
                 { text: "Authentic", className: "text-foreground font-display font-bold" },
-                { text: "Garments", className: "bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent font-display font-bold" },
+                { text: "Garments", className: "bg-gradient-to-r from-accent via-secondary to-primary bg-clip-text text-transparent font-display font-bold" },
               ]}
               className="justify-start mb-6"
               cursorClassName="bg-primary"

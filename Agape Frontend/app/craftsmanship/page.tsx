@@ -13,6 +13,8 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
+import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect'
+import DraggableCardDemo from '@/components/draggable-card-demo'
 import { Sparkles, Heart, Award, Users, Clock, Globe } from 'lucide-react'
 import Link from 'next/link'
 
@@ -30,7 +32,7 @@ export default function CraftsmanshipPage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section with Parallax */}
-        <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-muted/50 to-background">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-background">
           {/* Background Image with Parallax */}
           <motion.div
             style={{ y: y1, scale }}
@@ -60,9 +62,16 @@ export default function CraftsmanshipPage() {
                 className="mb-6 justify-center"
               />
 
-              <h1 className="font-display text-5xl md:text-7xl font-bold mb-6">
-                The Art of Lace
-              </h1>
+              <TypewriterEffectSmooth
+                words={[
+                  { text: "The", className: "text-foreground font-display font-bold" },
+                  { text: "Art", className: "text-foreground font-display font-bold" },
+                  { text: "of", className: "text-foreground font-display font-bold" },
+                  { text: "Lace", className: "bg-gradient-to-r from-accent via-secondary to-primary bg-clip-text text-transparent font-display font-bold" },
+                ]}
+                className="justify-center mb-6"
+                cursorClassName="bg-primary"
+              />
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
                 A timeless tradition woven with precision, passion, and pride—each thread tells a story of Ghana's rich cultural heritage
               </p>
@@ -134,53 +143,9 @@ export default function CraftsmanshipPage() {
           </div>
         </section>
 
-        {/* The Process Section */}
-        <section className="py-20 md:py-32 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="font-display text-3xl md:text-5xl font-bold mb-4">
-                The Weaving Process
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Each Lace is a masterpiece, requiring weeks of meticulous work from start to finish
-              </p>
-            </motion.div>
-
-            {/* Process Steps */}
-            <div className="grid md:grid-cols-3 gap-8">
-              {processSteps.map((step, index) => (
-                <motion.div
-                  key={step.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="bg-card rounded-2xl p-8 shadow-card"
-                >
-                  <div className="mb-6">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                      <step.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-xl mb-3">{step.title}</h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                  </div>
-                  <div className="relative aspect-video rounded-lg overflow-hidden">
-                    <Image
-                      src={step.image}
-                      alt={step.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+        {/* Interactive Fabric Showcase */}
+        <section className="py-20 md:py-32">
+          <DraggableCardDemo />
         </section>
 
         {/* Symbolic Meanings Section */}
