@@ -1,9 +1,20 @@
 export const SITE_CONFIG = {
   name: "AGAPE LOOKS",
-  tagline: "Authentic Lace, Handwoven in Ghana",
-  description: "Premium Lace fabric and garments crafted by Ghanaian weavers",
+  tagline: "Threads of Heritage",
+  description: "Luxury Lace fabric handwoven by Ghanaian master artisans. Where ancient craft meets contemporary elegance.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://agapelooks.com",
-  whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+233123456789",
+  whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+233591599253",
+  brandValues: [
+    "Heritage & Authenticity",
+    "Craftsmanship & Artistry",
+    "Cultural Pride",
+    "Sustainable Luxury"
+  ],
+  socialProof: {
+    yearsOfCraftsmanship: "Generations",
+    masterArtisans: "20+",
+    satisfiedCustomers: "500+"
+  }
 } as const
 
 export const CURRENCY = {

@@ -4,14 +4,18 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Agape looks Brand Color Tokens */
+  /* Agape Looks Luxury Brand Color Tokens - BOLD Pink & Purple Identity */
   /* Primary Brand Colors */
-  --brand-gold: oklch(0.86 0.17 95);
-  /* #FFD100 - Vibrant Gold */
-  --brand-red: oklch(0.48 0.18 25);
-  /* #B03030 */
-  --brand-green: oklch(0.38 0.1 155);
-  /* #265E3E */
+  --brand-hot-pink: oklch(0.65 0.28 350);
+  /* #E91E8C - Vibrant Hot Pink */
+  --brand-deep-purple: oklch(0.42 0.20 300);
+  /* #7B2CBF - Rich Deep Purple */
+  --brand-fuchsia: oklch(0.58 0.30 330);
+  /* #C724B1 - Bold Fuchsia */
+  --brand-royal-purple: oklch(0.48 0.22 285);
+  /* #9D4EDD - Royal Purple */
+  --brand-charcoal: oklch(0.15 0 0);
+  /* #1A1A1A - Authority */
 
   /* Neutrals */
   --neutral-900: oklch(0.15 0 0);
@@ -20,46 +24,46 @@
   /* #F2F2F2 - Soft Gray */
   --muted-black: oklch(0.1 0 0);
   /* #0E0E0E */
-  --bg-ivory: oklch(0.78 0.01 60);
-  /* #c6bfb7 - Warm Gray */
+  --bg-cream: oklch(0.96 0.008 85);
+  /* #F5F3EF - Warm Cream Elegance */
   --soft-gray-200: oklch(0.92 0 0);
 
   /* Semantic Design Tokens */
-  --background: var(--bg-ivory);
-  --foreground: var(--neutral-900);
+  --background: var(--bg-cream);
+  --foreground: var(--brand-charcoal);
   --card: oklch(1 0 0);
-  --card-foreground: var(--neutral-900);
+  --card-foreground: var(--brand-charcoal);
   --popover: oklch(1 0 0);
-  --popover-foreground: var(--neutral-900);
+  --popover-foreground: var(--brand-charcoal);
 
-  /* Primary = Brand Gold */
-  --primary: var(--brand-gold);
-  --primary-foreground: var(--neutral-900);
+  /* Primary = BOLD Hot Pink */
+  --primary: var(--brand-hot-pink);
+  --primary-foreground: oklch(1 0 0);
 
-  /* Secondary = Deep Charcoal */
-  --secondary: var(--neutral-900);
+  /* Secondary = Deep Purple */
+  --secondary: var(--brand-deep-purple);
   --secondary-foreground: oklch(1 0 0);
 
   /* Muted */
   --muted: var(--neutral-100);
   --muted-foreground: var(--muted-black);
 
-  /* Accent = Brand Gold */
-  --accent: var(--brand-gold);
-  --accent-foreground: var(--neutral-900);
+  /* Accent = Bold Fuchsia */
+  --accent: var(--brand-fuchsia);
+  --accent-foreground: oklch(1 0 0);
 
-  /* Destructive = Brand Red */
-  --destructive: var(--brand-red);
+  /* Destructive = Hot Pink */
+  --destructive: var(--brand-hot-pink);
   --destructive-foreground: oklch(1 0 0);
 
-  /* Success = Brand Green */
-  --success: var(--brand-green);
+  /* Success = Royal Purple */
+  --success: var(--brand-royal-purple);
   --success-foreground: oklch(1 0 0);
 
   /* Borders & Inputs */
   --border: var(--soft-gray-200);
   --input: var(--soft-gray-200);
-  --ring: var(--brand-gold);
+  --ring: var(--brand-hot-pink);
 
   /* Border Radius Tokens */
   --radius: 0.75rem;
@@ -75,7 +79,7 @@
   --shadow-modal: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   /* Focus Ring Token */
-  --focus-ring: 0 0 0 2px oklch(from var(--brand-gold) l c h / 0.2);
+  --focus-ring: 0 0 0 2px oklch(from var(--brand-hot-pink) l c h / 0.2);
 
   /* Motion Tokens */
   --duration-standard: 280ms;
@@ -94,12 +98,12 @@
   --space-7: 40px;
   --space-8: 64px;
 
-  /* Chart colors using brand palette */
-  --chart-1: var(--brand-gold);
-  --chart-2: var(--brand-green);
-  --chart-3: var(--brand-red);
-  --chart-4: oklch(0.65 0.15 45);
-  --chart-5: oklch(0.55 0.12 180);
+  /* Chart colors using BOLD pink/purple palette */
+  --chart-1: var(--brand-hot-pink);
+  --chart-2: var(--brand-deep-purple);
+  --chart-3: var(--brand-fuchsia);
+  --chart-4: var(--brand-royal-purple);
+  --chart-5: oklch(0.55 0.25 340);
 
   /* Sidebar colors */
   --sidebar: oklch(1 0 0);
@@ -114,26 +118,26 @@
 
 .dark {
   --background: var(--neutral-900);
-  --foreground: var(--bg-ivory);
+  --foreground: var(--bg-cream);
   --card: oklch(0.2 0 0);
-  --card-foreground: var(--bg-ivory);
+  --card-foreground: var(--bg-cream);
   --popover: oklch(0.2 0 0);
-  --popover-foreground: var(--bg-ivory);
-  --primary: var(--brand-gold);
-  --primary-foreground: var(--neutral-900);
-  --secondary: oklch(0.3 0 0);
-  --secondary-foreground: var(--bg-ivory);
+  --popover-foreground: var(--bg-cream);
+  --primary: var(--brand-hot-pink);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--brand-deep-purple);
+  --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.7 0 0);
-  --accent: var(--brand-gold);
-  --accent-foreground: var(--neutral-900);
-  --destructive: var(--brand-red);
-  --destructive-foreground: var(--bg-ivory);
-  --success: var(--brand-green);
-  --success-foreground: var(--bg-ivory);
+  --accent: var(--brand-fuchsia);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: var(--brand-hot-pink);
+  --destructive-foreground: oklch(1 0 0);
+  --success: var(--brand-royal-purple);
+  --success-foreground: oklch(1 0 0);
   --border: oklch(0.3 0 0);
   --input: oklch(0.3 0 0);
-  --ring: var(--brand-gold);
+  --ring: var(--brand-hot-pink);
 
   /* Sidebar colors */
   --sidebar: oklch(0.205 0 0);
@@ -147,8 +151,8 @@
 }
 
 @theme inline {
-  /* Typography tokens - Montserrat for both display and body */
-  --font-display: var(--font-montserrat);
+  /* Typography tokens - Luxury typography system */
+  --font-display: var(--font-cormorant);
   --font-sans: var(--font-montserrat);
   --font-mono: var(--font-geist-mono);
 
@@ -250,7 +254,7 @@
 
   /* Focus visible styles for accessibility */
   :focus-visible {
-    outline: 2px solid oklch(from var(--brand-gold) l c h / 0.4);
+    outline: 2px solid oklch(from var(--brand-hot-pink) l c h / 0.4);
     outline-offset: 2px;
   }
 
@@ -302,10 +306,10 @@
     inset: 0;
     opacity: 0.03;
     background-image: repeating-linear-gradient(45deg,
-        var(--brand-gold) 0,
-        var(--brand-gold) 2px,
+        var(--brand-hot-pink) 0,
+        var(--brand-hot-pink) 2px,
         transparent 2px,
-        transparent 10px), repeating-linear-gradient(-45deg, var(--brand-red) 0, var(--brand-red) 2px, transparent 2px, transparent 10px);
+        transparent 10px), repeating-linear-gradient(-45deg, var(--brand-deep-purple) 0, var(--brand-deep-purple) 2px, transparent 2px, transparent 10px);
     pointer-events: none;
   }
 }

@@ -1,7 +1,7 @@
 /**
- * Collections Page
- * Browse Lace collections by category, occasion, and pattern
- * @page app/collections
+ * Luxury Homepage
+ * Brand experience focused on heritage, craftsmanship, and storytelling
+ * @page app/
  */
 
 'use client'
@@ -9,338 +9,249 @@
 import * as React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { Badge } from '@/components/ui/badge'
-import { ArrowRight, Star } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { HeroParallax } from '@/components/ui/hero-parallax'
+import { ArrowRight } from 'lucide-react'
 
-interface Collection {
-  id: string
-  name: string
-  slug: string
-  description: string
-  image: string
-  productCount: number
-  featured?: boolean
-  color?: string
-}
-
-// Collection categories
-const collections: Collection[] = [
+// Collection products for parallax hero - using unique collection images
+const collectionProducts = [
   {
-    id: '1',
-    name: 'Brocade Patterns',
-    slug: 'brocade-patterns',
-    description: 'Brocade with classic patterns passed down through generations',
-    image: '/brocade-material-red-purple.jpeg',
-    productCount: 24,
-    featured: true,
-    color: 'from-amber-500 to-amber-700',
+    title: "Brocade Patterns",
+    link: "/shop?collection=brocade-patterns",
+    thumbnail: "/brocade-material-red-purple.jpeg",
   },
   {
-    id: '2',
-    name: 'Royal Collection',
-    slug: 'royal-collection',
-    description: 'Premium Two Toned lace featuring gold and intricate patterns for special occasions',
-    image: '/royal-collection-lace.jpg',
-    productCount: 18,
-    featured: true,
-    color: 'from-yellow-600 to-amber-800',
+    title: "Royal Collection",
+    link: "/shop?collection=royal-collection",
+    thumbnail: "/royal-collection-lace.jpg",
   },
   {
-    id: '3',
-    name: 'Wedding Collection',
-    slug: 'wedding',
-    description: 'Elegant pieces perfect for weddings, engagements, and celebrations',
-    image: '/beaded-lace-style-purple.jpeg',
-    productCount: 32,
-    color: 'from-rose-500 to-pink-700',
+    title: "Wedding Collection",
+    link: "/shop?collection=wedding",
+    thumbnail: "/beaded-lace-style-purple.jpeg",
   },
   {
-    id: '4',
-    name: 'Festival Wear',
-    slug: 'festival',
-    description: 'Vibrant and colorful Lace designs for festivals and cultural events',
-    image: '/brocade-style-red.jpeg',
-    productCount: 28,
-    color: 'from-purple-500 to-purple-700',
+    title: "Festival Wear",
+    link: "/shop?collection=festival",
+    thumbnail: "/brocade-style-red.jpeg",
   },
   {
-    id: '5',
-    name: 'Graduation Collection',
-    slug: 'graduation',
-    description: 'Sophisticated Lace stoles and sashes for academic ceremonies',
-    image: '/brocade-style-blue.jpeg',
-    productCount: 15,
-    color: 'from-blue-500 to-blue-700',
+    title: "Graduation Collection",
+    link: "/shop?collection=graduation",
+    thumbnail: "/brocade-style-blue.jpeg",
   },
   {
-    id: '6',
-    name: 'Modern Fusion',
-    slug: 'modern-fusion',
-    description: 'Contemporary designs blending traditional wear with modern aesthetics',
-    image: '/modern-fusion-collection.jpg',
-    productCount: 20,
-    color: 'from-emerald-500 to-teal-700',
+    title: "Modern Fusion",
+    link: "/shop?collection=modern-fusion",
+    thumbnail: "/modern-fusion-collection.jpg",
   },
   {
-    id: '7',
-    name: 'Limited Edition',
-    slug: 'limited-edition',
-    description: 'Exclusive, rare patterns available in limited quantities',
-    image: '/embroided-lace-collection.jpeg',
-    productCount: 8,
-    featured: true,
-    color: 'from-red-500 to-red-700',
+    title: "Limited Edition",
+    link: "/shop?collection=limited-edition",
+    thumbnail: "/embroided-lace-collection.jpeg",
   },
   {
-    id: '8',
-    name: 'Everyday Elegance',
-    slug: 'everyday',
-    description: 'Comfortable and stylish woven pieces for daily wear',
-    image: '/two-toned-lace-style-pink-white-bg.png',
-    productCount: 36,
-    color: 'from-slate-500 to-slate-700',
+    title: "Beaded Lace Gold",
+    link: "/shop",
+    thumbnail: "/beaded-lace-material-gold.jpeg",
+  },
+  {
+    title: "Two Toned Pink",
+    link: "/shop",
+    thumbnail: "/two-toned-lace-style-pink.jpeg",
+  },
+  {
+    title: "Beaded Black Lace",
+    link: "/shop",
+    thumbnail: "/beaded-lace-material-black.jpeg",
+  },
+  {
+    title: "Brocade Green",
+    link: "/shop",
+    thumbnail: "/brocade-style-green.jpeg",
+  },
+  {
+    title: "Champagne Brocade",
+    link: "/shop",
+    thumbnail: "/champagne-brocade-style-brown.jpeg",
+  },
+  {
+    title: "Purple Brocade",
+    link: "/shop",
+    thumbnail: "/brocade-style-purple.jpeg",
+  },
+  {
+    title: "Beaded Lace Purple",
+    link: "/shop",
+    thumbnail: "/beaded-lace-material-purple.jpeg",
+  },
+  {
+    title: "Green Gold Beaded",
+    link: "/shop",
+    thumbnail: "/green-gold-beaded-lace.png",
   },
 ]
 
-export default function CollectionsPage() {
-  const featuredCollections = collections.filter((c) => c.featured)
-  const regularCollections = collections.filter((c) => !c.featured)
-
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+    <>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
 
-      <main id="main-content" className="flex-1">
-        {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
-          {/* Background Image */}
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="/green-gold-beaded-lace.png"
-              alt="Lace collections"
-              fill
-              className="object-cover"
-              priority
-            />
-            {/* Subtle overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/14 via-black/10 to-background/34" />
-          </div>
+        <main id="main-content" className="flex-1">
+          {/* Hero Parallax Section */}
+          <HeroParallax products={collectionProducts} />
 
-          {/* Hero Content */}
-          <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h1 className="font-display text-4xl md:text-6xl font-bold mb-6 text-white">
-                Explore Our Collections
-              </h1>
-              <p className="text-lg md:text-xl text-white/90 max-w-3xl mb-8">
-                Discover authentic Lace fabric organized by tradition, occasion, and style.
-                Each collection tells a unique story of Ghanaian heritage and craftsmanship.
-              </p>
-
-              <div className="flex items-center gap-4 text-sm text-white/80">
-                <span>{collections.length} Collections</span>
-                <span>•</span>
-                <span>{collections.reduce((sum, c) => sum + c.productCount, 0)} Products</span>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Featured Collections */}
-        {featuredCollections.length > 0 && (
-          <section className="py-12 md:py-20 bg-muted/30">
-            <div className="container mx-auto px-4">
-              <div className="mb-12">
-                <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-                  Featured Collections
-                </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl">
-                  Handpicked collections showcasing our finest Lace pieces
-                </p>
-              </div>
-
-              <div className="relative">
-                {/* SVG Clip Path Definition for Container */}
-                <svg width="0" height="0" className="absolute">
-                  <defs>
-                    <clipPath id="container-curve-v6" clipPathUnits="objectBoundingBox">
-                      <path d="M 0,0 C 0.01,0.02 0.4,0.12 0.5,0.12 C 0.6,0.12 0.99,0.02 1,0 L 1,1 L 0,1 Z" />
-                    </clipPath>
-                  </defs>
-                </svg>
-
-                <div
-                  className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8"
-                  style={{ clipPath: 'url(#container-curve-v6)' }}
+          {/* Featured Collections */}
+          <section className="relative py-24 md:py-32 bg-gradient-to-b from-accent/5 via-background to-secondary/5 overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="text-center mb-16">
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                  className="text-sm uppercase tracking-widest text-muted-foreground mb-4"
                 >
-                  {featuredCollections.map((collection, index) => (
-                    <CollectionCard
-                      key={collection.id}
-                      collection={collection}
-                      index={index}
-                      featured
-                    />
-                  ))}
-                </div>
+                  Collections
+                </motion.p>
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  viewport={{ once: true }}
+                  className="font-display text-4xl md:text-5xl font-light"
+                >
+                  Curated for distinction
+                </motion.h2>
+              </div>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[
+                  {
+                    name: 'Royal Collection',
+                    image: '/royal-collection-lace.jpg',
+                    slug: 'royal-collection',
+                  },
+                  {
+                    name: 'Wedding Collection',
+                    image: '/beaded-lace-style-purple.jpeg',
+                    slug: 'wedding',
+                  },
+                  {
+                    name: 'Limited Edition',
+                    image: '/embroided-lace-collection.jpeg',
+                    slug: 'limited-edition',
+                  },
+                ].map((collection, index) => (
+                  <motion.div
+                    key={collection.slug}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                  >
+                    <Link
+                      href={`/shop?collection=${collection.slug}`}
+                      className="group block"
+                    >
+                      <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4">
+                        <Image
+                          src={collection.image}
+                          alt={collection.name}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <h3 className="font-display text-2xl font-light group-hover:text-primary transition-colors">
+                        {collection.name}
+                      </h3>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="text-center mt-12">
+                <Link
+                  href="/collections"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors group"
+                >
+                  <span className="font-medium">View all collections</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
             </div>
           </section>
-        )}
 
-        {/* All Collections */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4">
-            <div className="mb-12">
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-                All Collections
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl">
-                Browse our complete range of  collections
-              </p>
-            </div>
+          {/* Craftsmanship Section */}
+          <section className="relative py-24 md:py-32 overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-1/4 left-10 w-80 h-80 bg-secondary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-16 items-center">
+                {/* Image */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8 }}
+                  viewport={{ once: true }}
+                  className="relative aspect-square rounded-2xl overflow-hidden order-2 lg:order-1"
+                >
+                  <Image
+                    src="/beaded-lace-material-gold.jpeg"
+                    alt="Intricate lace detail"
+                    fill
+                    className="object-cover"
+                  />
+                </motion.div>
 
-            <div className="relative overflow-hidden">
-              {/* Scrolling container */}
-              <div className="flex gap-6 animate-scroll-slow hover:pause-animation">
-                {/* Duplicate collections for seamless loop */}
-                {[...regularCollections, ...regularCollections].map((collection, index) => (
-                  <div key={`${collection.id}-${index}`} className="flex-shrink-0 w-[280px]">
-                    <CollectionCard
-                      collection={collection}
-                      index={index}
-                    />
+                {/* Text Content */}
+                <motion.div
+                  initial={{ opacity: 0, x: 30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8 }}
+                  viewport={{ once: true }}
+                  className="space-y-6 order-1 lg:order-2"
+                >
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground">
+                    Craftsmanship
+                  </p>
+                  <h2 className="font-display text-4xl md:text-5xl font-light leading-tight">
+                    Hours become heirlooms
+                  </h2>
+                  <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
+                    <p>
+                      Each piece of our Lace requires countless hours at the loom, where weavers employ
+                      techniques passed down through generations. The rhythm of the shuttle, the
+                      precision of each thread—this is mastery in motion.
+                    </p>
+                    <p>
+                      What emerges is not merely fabric, but wearable art that honors both the weaver's
+                      skill and the wearer's appreciation for authentic luxury.
+                    </p>
                   </div>
-                ))}
+                  <Link
+                    href="/craftsmanship"
+                    className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors group mt-8"
+                  >
+                    <span className="font-medium">Explore the process</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </motion.div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
 
-        {/* Add custom CSS for the scrolling animation */}
-        <style jsx>{`
-          @keyframes scroll-slow {
-            0% {
-              transform: translateX(0);
-            }
-            100% {
-              transform: translateX(-50%);
-            }
-          }
-
-          .animate-scroll-slow {
-            animation: scroll-slow 40s linear infinite;
-          }
-
-          .animate-scroll-slow:hover {
-            animation-play-state: paused;
-          }
-        `}</style>
-
-        {/* CTA Section */}
-        <section className="py-16 md:py-24 bg-primary text-primary-foreground">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              Can't Find What You're Looking For?
-            </h2>
-            <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-              We offer custom Lace weaving services. Contact us to create your unique design.
-            </p>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 bg-primary-foreground text-primary px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity"
-            >
-              Contact Us
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </div>
-        </section>
-      </main>
-
-      <SiteFooter />
-    </div>
-  )
-}
-
-/**
- * Collection Card Component
- */
-function CollectionCard({
-  collection,
-  index,
-  featured = false,
-}: {
-  collection: Collection
-  index: number
-  featured?: boolean
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-    >
-      <Link
-        href={`/shop?collection=${collection.slug}`}
-        className="group block"
-      >
-        <div
-          className={cn(
-            'relative overflow-hidden rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300',
-            featured ? 'aspect-[4/5]' : 'aspect-square'
-          )}
-        >
-          {/* Image */}
-          <div className={cn(
-            "absolute inset-0",
-            collection.slug === 'wedding' && "bg-white"
-          )}>
-            <Image
-              src={collection.image}
-              alt={collection.name}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          </div>
-
-          {/* Content */}
-          <div className="absolute inset-0 flex flex-col justify-end p-6">
-            {/* Badge */}
-            {collection.featured && (
-              <Badge variant="gold" className="absolute top-4 right-4">
-                <Star className="h-4 w-4" fill="currentColor" />
-              </Badge>
-            )}
-
-            {/* Title */}
-            <h3 className="font-display text-2xl md:text-3xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
-              {collection.name}
-            </h3>
-
-            {/* Description */}
-            <p className="text-white/90 text-sm mb-3 line-clamp-2">
-              {collection.description}
-            </p>
-
-            {/* Product Count */}
-            <div className="flex items-center justify-between">
-              <span className="text-white/70 text-sm">
-                {collection.productCount} Products
-              </span>
-              <ArrowRight className="h-5 w-5 text-white group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
+        <SiteFooter />
+      </div>
+    </>
   )
 }

@@ -143,3 +143,47 @@ export function ShakeButton({
     </motion.div>
   )
 }
+
+/**
+ * SlideButton Component
+ * Button with scaling animation on click
+ */
+export function SlideButton({
+  children,
+  icon,
+  className,
+  disabled,
+  onClick,
+  ...props
+}: ButtonProps & { icon?: string | React.ReactNode }) {
+  const [isClicked, setIsClicked] = React.useState(false)
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!disabled) {
+      setIsClicked(true)
+      setTimeout(() => setIsClicked(false), 200)
+      onClick?.(e)
+    }
+  }
+
+  return (
+    <motion.div
+      animate={isClicked ? { scale: 0.95 } : { scale: 1 }}
+      transition={{ duration: 0.1 }}
+    >
+      <Button
+        {...props}
+        disabled={disabled}
+        onClick={handleClick}
+        className={cn(
+          "relative bg-primary text-white border-0",
+          "hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300",
+          disabled && "opacity-50 cursor-not-allowed",
+          className
+        )}
+      >
+        {children}
+      </Button>
+    </motion.div>
+  )
+}

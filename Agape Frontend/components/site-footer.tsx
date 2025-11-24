@@ -33,13 +33,17 @@ const footerLinks = {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-background">
-      <div className="container mx-auto px-4 py-12 md:py-16">
+    <footer className="relative border-t border-primary/20 bg-gradient-to-br from-secondary/5 via-background to-accent/5 overflow-hidden">
+      {/* Decorative background patterns */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
+      <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand section */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-block mb-4">
-              <span className="font-display text-2xl font-bold">{SITE_CONFIG.name}</span>
+              <span className="font-display text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">{SITE_CONFIG.name}</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-6 max-w-sm">
               Authentic Lace fabric and garments, handwoven by skilled Ghanaian artisans. Each piece tells a story of

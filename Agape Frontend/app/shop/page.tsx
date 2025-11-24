@@ -21,6 +21,7 @@ import { EmptySearchResults, EmptyCategory } from '@/components/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProducts } from '@/lib/hooks/useProducts'
 import { ProductFilters as ProductFiltersType } from '@/lib/services/products.service'
+import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect'
 
 export default function ShopPage() {
   const router = useRouter()
@@ -100,20 +101,34 @@ export default function ShopPage() {
           {/* Hero Content */}
           <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
               <Breadcrumb
                 items={[{ label: 'Shop', href: '/shop' }]}
                 className="mb-6"
               />
-
-              <h1 className="font-display text-4xl md:text-6xl font-bold mb-6">Shop Authentic Garments</h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8">
-                Browse our collection of handwoven Lace fabric and garments, each piece crafted with tradition and care
-              </p>
             </motion.div>
+
+            <TypewriterEffectSmooth 
+              words={[
+                { text: "Shop", className: "text-primary font-display font-bold" },
+                { text: "Authentic", className: "text-foreground font-display font-bold" },
+                { text: "Garments", className: "bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent font-display font-bold" },
+              ]}
+              className="justify-start mb-6"
+              cursorClassName="bg-primary"
+            />
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 3 }}
+              className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8"
+            >
+              Browse our collection of handwoven Lace fabric and garments, each piece crafted with tradition and care
+            </motion.p>
           </div>
         </section>
 

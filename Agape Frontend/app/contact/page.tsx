@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, MapPin, MessageCircle } from "lucide-react"
+import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect"
 
 export default function ContactPage() {
   const [formData, setFormData] = React.useState({
@@ -64,21 +65,35 @@ export default function ContactPage() {
           {/* Hero Content */}
           <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
               <Breadcrumb
                 items={[{ label: 'Contact', href: '/contact' }]}
                 className="mb-6"
               />
-
-              <h1 className="font-display text-4xl md:text-6xl font-bold mb-6">Get In Touch</h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8">
-                Have questions about our Lace fabric or need assistance with your order? We're here to help you find the
-                perfect piece.
-              </p>
             </motion.div>
+
+            <TypewriterEffectSmooth 
+              words={[
+                { text: "Get", className: "text-primary font-display font-bold" },
+                { text: "In", className: "text-foreground font-display font-bold" },
+                { text: "Touch", className: "bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent font-display font-bold" },
+              ]}
+              className="justify-start mb-6"
+              cursorClassName="bg-primary"
+            />
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 3 }}
+              className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8"
+            >
+              Have questions about our Lace fabric or need assistance with your order? We're here to help you find the
+              perfect piece.
+            </motion.p>
           </div>
         </section>
 

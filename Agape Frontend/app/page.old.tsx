@@ -1,7 +1,7 @@
 /**
- * Collections Page
- * Browse Lace collections by category, occasion, and pattern
- * @page app/collections
+ * Luxury Homepage
+ * Brand experience focused on heritage, craftsmanship, and storytelling
+ * @page app/
  */
 
 'use client'
@@ -9,27 +9,17 @@
 import * as React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { Badge } from '@/components/ui/badge'
-import { ArrowRight, Star } from 'lucide-react'
+import { CustomCursor } from '@/components/luxury/custom-cursor'
+import { HeroVideo } from '@/components/luxury/hero-video'
+import { ScrollIndicator } from '@/components/luxury/scroll-indicator'
+import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect'
 
-interface Collection {
-  id: string
-  name: string
-  slug: string
-  description: string
-  image: string
-  productCount: number
-  featured?: boolean
-  color?: string
-}
-
-// Collection categories
-const collections: Collection[] = [
+// Featured collections for homepage
+const featuredCollections = [
   {
     id: '1',
     name: 'Brocade Patterns',
@@ -128,39 +118,29 @@ export default function CollectionsPage() {
               priority
             />
             {/* Subtle overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background/50" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/14 via-black/10 to-background/34" />
           </div>
 
           {/* Hero Content */}
           <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-            <TypewriterEffectSmooth 
-              words={[
-                { text: "Explore", className: "text-primary font-display font-bold" },
-                { text: "Our", className: "text-white font-display font-bold" },
-                { text: "Collections", className: "bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent font-display font-bold" },
-              ]}
-              className="justify-start mb-6"
-              cursorClassName="bg-primary"
-            />
-            <motion.p 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 3 }}
-              className="text-lg md:text-xl text-white/90 max-w-3xl mb-8"
+              transition={{ duration: 0.6 }}
             >
-              Discover authentic Lace fabric organized by tradition, occasion, and style.
-              Each collection tells a unique story of Ghanaian heritage and craftsmanship.
-            </motion.p>
+              <h1 className="font-display text-4xl md:text-6xl font-bold mb-6 text-white">
+                Explore Our Collections
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 max-w-3xl mb-8">
+                Discover authentic Lace fabric organized by tradition, occasion, and style.
+                Each collection tells a unique story of Ghanaian heritage and craftsmanship.
+              </p>
 
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 3.5 }}
-              className="flex items-center gap-4 text-sm text-white/80"
-            >
-              <span>{collections.length} Collections</span>
-              <span>•</span>
-              <span>{collections.reduce((sum, c) => sum + c.productCount, 0)} Products</span>
+              <div className="flex items-center gap-4 text-sm text-white/80">
+                <span>{collections.length} Collections</span>
+                <span>•</span>
+                <span>{collections.reduce((sum, c) => sum + c.productCount, 0)} Products</span>
+              </div>
             </motion.div>
           </div>
         </section>
@@ -178,15 +158,29 @@ export default function CollectionsPage() {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {featuredCollections.map((collection, index) => (
-                  <CollectionCard
-                    key={collection.id}
-                    collection={collection}
-                    index={index}
-                    featured
-                  />
-                ))}
+              <div className="relative">
+                {/* SVG Clip Path Definition for Container */}
+                <svg width="0" height="0" className="absolute">
+                  <defs>
+                    <clipPath id="container-curve-v6" clipPathUnits="objectBoundingBox">
+                      <path d="M 0,0 C 0.01,0.02 0.4,0.12 0.5,0.12 C 0.6,0.12 0.99,0.02 1,0 L 1,1 L 0,1 Z" />
+                    </clipPath>
+                  </defs>
+                </svg>
+
+                <div
+                  className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8"
+                  style={{ clipPath: 'url(#container-curve-v6)' }}
+                >
+                  {featuredCollections.map((collection, index) => (
+                    <CollectionCard
+                      key={collection.id}
+                      collection={collection}
+                      index={index}
+                      featured
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </section>
@@ -200,21 +194,46 @@ export default function CollectionsPage() {
                 All Collections
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl">
-                Browse our complete range of collections
+                Browse our complete range of  collections
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {regularCollections.map((collection, index) => (
-                <CollectionCard
-                  key={collection.id}
-                  collection={collection}
-                  index={index}
-                />
-              ))}
+            <div className="relative overflow-hidden">
+              {/* Scrolling container */}
+              <div className="flex gap-6 animate-scroll-slow hover:pause-animation">
+                {/* Duplicate collections for seamless loop */}
+                {[...regularCollections, ...regularCollections].map((collection, index) => (
+                  <div key={`${collection.id}-${index}`} className="flex-shrink-0 w-[280px]">
+                    <CollectionCard
+                      collection={collection}
+                      index={index}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
+
+        {/* Add custom CSS for the scrolling animation */}
+        <style jsx>{`
+          @keyframes scroll-slow {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+
+          .animate-scroll-slow {
+            animation: scroll-slow 40s linear infinite;
+          }
+
+          .animate-scroll-slow:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
 
         {/* CTA Section */}
         <section className="py-16 md:py-24 bg-primary text-primary-foreground">

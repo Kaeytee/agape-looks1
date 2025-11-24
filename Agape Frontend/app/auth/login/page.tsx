@@ -3,12 +3,16 @@
 import * as React from "react"
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
+import { SlideButton } from "@/components/ui/animated-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Cover } from "@/components/ui/cover"
 import { authService } from "@/lib/services/auth.service"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -58,15 +62,54 @@ export default function LoginPage() {
     }
   }
 
+  const fabricImages = [
+    "/brocade-material-red-purple.jpeg",
+    "/royal-collection-lace.jpg",
+    "/beaded-lace-style-purple.jpeg",
+    "/brocade-style-red.jpeg",
+  ]
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex-1 flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to your Agape looks account</p>
+      <main className="flex-1 grid lg:grid-cols-2">
+        {/* Left Side - Fabric Images */}
+        <div className="hidden lg:block relative overflow-hidden bg-primary/10">
+          <div className="absolute inset-0 grid grid-cols-2 gap-2 p-4">
+            {fabricImages.map((image, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="relative rounded-xl overflow-hidden group"
+              >
+                <Image
+                  src={image}
+                  alt={`Fabric collection ${index + 1}`}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-primary/20" />
+              </motion.div>
+            ))}
+          </div>
         </div>
+
+        {/* Right Side - Login Form */}
+        <div className="flex items-center justify-center bg-background px-4 py-12">
+          <div className="w-full max-w-md">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-8"
+            >
+              <h1 className="font-display text-5xl font-bold mb-2">
+                <span className="text-foreground">Welcome</span> <Cover>Back</Cover>
+              </h1>
+              <p className="text-muted-foreground text-lg">Sign in to your Agape looks account</p>
+            </motion.div>
 
         <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -133,9 +176,9 @@ export default function LoginPage() {
               </Label>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+            <SlideButton type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
+            </SlideButton>
           </form>
 
           <div className="mt-6 text-center text-sm">
@@ -146,17 +189,18 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          By signing in, you agree to our{" "}
-          <Link href="/terms" className="underline hover:text-foreground">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline hover:text-foreground">
-            Privacy Policy
-          </Link>
-        </p>
-      </div>
+            <p className="text-center text-xs text-muted-foreground mt-6">
+              By signing in, you agree to our{" "}
+              <Link href="/terms" className="underline hover:text-foreground">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-foreground">
+                Privacy Policy
+              </Link>
+            </p>
+          </div>
+        </div>
       </main>
     </div>
   )

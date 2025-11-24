@@ -9,6 +9,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Button } from "@/components/ui/button"
 import { Heart, Users, Award, Globe } from "lucide-react"
+import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect"
 
 export default function AboutPage() {
   return (
@@ -33,22 +34,35 @@ export default function AboutPage() {
           {/* Hero Content */}
           <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
               <Breadcrumb
                 items={[{ label: 'About', href: '/about' }]}
                 className="mb-6"
               />
-
-              <h1 className="font-display text-4xl md:text-6xl font-bold mb-6">
-                Celebrating Life's Special Moments
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8">
-                Your one-stop destination for high-quality brocade and luxurious lace fabrics in Accra, Ghana
-              </p>
             </motion.div>
+
+            <TypewriterEffectSmooth 
+              words={[
+                { text: "Celebrating", className: "text-primary font-display font-bold" },
+                { text: "Life's", className: "text-foreground font-display font-bold" },
+                { text: "Special", className: "text-accent font-display font-bold" },
+                { text: "Moments", className: "bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent font-display font-bold" },
+              ]}
+              className="justify-start mb-6"
+              cursorClassName="bg-primary"
+            />
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 3 }}
+              className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8"
+            >
+              Your one-stop destination for high-quality brocade and luxurious lace fabrics in Accra, Ghana
+            </motion.p>
           </div>
         </section>
 

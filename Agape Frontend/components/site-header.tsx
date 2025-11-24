@@ -146,14 +146,19 @@ export function SiteHeader() {
           animate={{ y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           className={cn(
-            "max-w-7xl mx-auto rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50 transition-all duration-300",
-            isScrolled && "shadow-xl",
+            "max-w-7xl mx-auto rounded-full backdrop-blur-md shadow-lg transition-all duration-300 relative overflow-hidden",
+            "bg-gradient-to-r from-primary/10 via-card/95 to-accent/10",
+            "border-2 border-primary/20",
+            isScrolled && "shadow-xl shadow-primary/20",
           )}
         >
+          {/* Decorative gradient orbs */}
+          <div className="absolute top-0 left-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-10 w-32 h-32 bg-accent/20 rounded-full blur-3xl" />
           <div className="relative flex h-16 items-center justify-between px-4 sm:px-6 md:px-8 w-full">
-            {/* Logo - Left - Dynamic text size */}
+            {/* Logo - Left - Dynamic text size with gradient */}
             <Link href="/" className="flex items-center flex-shrink-0 z-10">
-              <span className="font-display text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight transition-colors">
+              <span className="font-display text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                 {SITE_CONFIG.name}
               </span>
             </Link>
@@ -165,15 +170,15 @@ export function SiteHeader() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "transition-colors hover:text-foreground relative py-2 whitespace-nowrap",
-                    pathname === item.href ? "text-foreground font-semibold" : "text-muted-foreground",
+                    "transition-all duration-300 hover:text-primary relative py-2 whitespace-nowrap",
+                    pathname === item.href ? "text-primary font-bold" : "text-muted-foreground hover:scale-105",
                   )}
                 >
                   {item.name}
                   {pathname === item.href && (
                     <motion.div
                       layoutId="navbar-indicator"
-                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+                      className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full shadow-lg shadow-primary/50"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
