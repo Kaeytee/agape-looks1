@@ -117,27 +117,25 @@ export default function CollectionsPage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-background">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <Image
               src="/green-gold-beaded-lace.png"
               alt="Lace collections"
               fill
-              className="object-cover"
+              className="object-cover opacity-20"
               priority
             />
-            {/* Subtle overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background/50" />
           </div>
 
           {/* Hero Content */}
           <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
             <TypewriterEffectSmooth 
               words={[
-                { text: "Explore", className: "text-primary font-display font-bold" },
-                { text: "Our", className: "text-white font-display font-bold" },
-                { text: "Collections", className: "bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent font-display font-bold" },
+                { text: "Explore", className: "text-foreground font-display font-bold" },
+                { text: "Our", className: "text-foreground font-display font-bold" },
+                { text: "Collections", className: "bg-gradient-to-r from-accent via-secondary to-primary bg-clip-text text-transparent font-display font-bold" },
               ]}
               className="justify-start mb-6"
               cursorClassName="bg-primary"
@@ -146,7 +144,7 @@ export default function CollectionsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 3 }}
-              className="text-lg md:text-xl text-white/90 max-w-3xl mb-8"
+              className="text-lg md:text-xl text-muted-foreground max-w-3xl mb-8"
             >
               Discover authentic Lace fabric organized by tradition, occasion, and style.
               Each collection tells a unique story of Ghanaian heritage and craftsmanship.
@@ -213,25 +211,6 @@ export default function CollectionsPage() {
                 />
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16 md:py-24 bg-primary text-primary-foreground">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              Can't Find What You're Looking For?
-            </h2>
-            <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-              We offer custom Lace weaving services. Contact us to create your unique design.
-            </p>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 bg-primary-foreground text-primary px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-opacity"
-            >
-              Contact Us
-              <ArrowRight className="h-5 w-5" />
-            </Link>
           </div>
         </section>
       </main>

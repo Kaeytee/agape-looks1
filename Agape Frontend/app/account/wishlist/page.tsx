@@ -22,7 +22,7 @@ export default function WishlistPage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-muted/50 to-background">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-background">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <Image
