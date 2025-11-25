@@ -94,11 +94,17 @@ export interface Order {
 export interface User {
   id: string
   email: string
-  firstName: string
-  lastName: string
+  name: string
+  firstName?: string
+  lastName?: string
   phone?: string
-  addresses: ShippingAddress[]
-  orders: string[]
-  wishlist: string[]
+  role: string
+  verified: boolean
+  isEmailVerified: boolean
+  avatar?: string
+  addresses?: ShippingAddress[]
+  orderCount?: number
+  wishlistCount?: number
   createdAt: string
+  updatedAt: string
 }

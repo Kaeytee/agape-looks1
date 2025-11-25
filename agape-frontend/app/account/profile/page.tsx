@@ -4,21 +4,27 @@ import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Save } from "lucide-react"
+import { toast } from "sonner"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { getCurrentUser, updateUserProfile } from "@/lib/api/users"
+import { type User } from "@/lib/types"
+import { authService } from "@/lib/services/auth.service"
+
+import { useAuth } from "@/lib/contexts/auth-context"
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { user, refreshUser, isLoading: isAuthLoading } = useAuth()
   const [isLoading, setIsLoading] = React.useState(false)
   const [profile, setProfile] = React.useState({
-    firstName: "Kwame",
-    lastName: "Mensah",
-    email: "kwame@example.com",
-    phone: "+233 XX XXX XXXX",
+    name: "",
+    email: "",
+    phone: "",
   })
   const [passwordData, setPasswordData] = React.useState({
     currentPassword: "",
@@ -28,15 +34,31 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = React.useState("")
   const [passwordSuccess, setPasswordSuccess] = React.useState(false)
 
+  React.useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      })
+    }
+  }, [user])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call for profile update
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    setIsLoading(false)
-    router.push("/account")
+    try {
+      await updateUserProfile(profile)
+      await refreshUser()
+      toast.success("Profile updated successfully")
+      router.push("/account")
+    } catch (error: any) {
+      console.error("Failed to update profile:", error)
+      toast.error(error?.response?.data?.message || "Failed to update profile")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -63,19 +85,17 @@ export default function ProfilePage() {
     setIsLoading(true)
 
     try {
-      // TODO: API call to change password
-      // await authService.changePassword(passwordData.currentPassword, passwordData.newPassword)
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await authService.changePassword(passwordData.currentPassword, passwordData.newPassword)
 
       setPasswordSuccess(true)
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
-      
+      toast.success("Password changed successfully")
+
       // Show success message for 3 seconds
       setTimeout(() => setPasswordSuccess(false), 3000)
     } catch (error: any) {
-      setPasswordError(error.response?.data?.message || "Failed to change password")
+      console.error("Failed to change password:", error)
+      setPasswordError(error?.response?.data?.message || "Failed to change password")
     } finally {
       setIsLoading(false)
     }
@@ -103,26 +123,15 @@ export default function ProfilePage() {
                 <CardDescription>Update your personal details and contact information</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={profile.firstName}
-                      onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={profile.lastName}
-                      onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={profile.name}
+                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    required
+                    disabled={isAuthLoading}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -133,6 +142,7 @@ export default function ProfilePage() {
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                     required
+                    disabled={isAuthLoading}
                   />
                 </div>
 
@@ -141,9 +151,9 @@ export default function ProfilePage() {
                   <Input
                     id="phone"
                     type="tel"
-                    value={profile.phone}
+                    value={profile.phone || ""}
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    required
+                    disabled={isAuthLoading}
                   />
                 </div>
               </CardContent>
@@ -161,7 +171,7 @@ export default function ProfilePage() {
                       {passwordError}
                     </div>
                   )}
-                  
+
                   {passwordSuccess && (
                     <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md text-sm">
                       Password changed successfully!
@@ -170,9 +180,9 @@ export default function ProfilePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="currentPassword">Current Password</Label>
-                    <Input 
-                      id="currentPassword" 
-                      type="password" 
+                    <Input
+                      id="currentPassword"
+                      type="password"
                       placeholder="Enter current password"
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
@@ -182,9 +192,9 @@ export default function ProfilePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">New Password</Label>
-                    <Input 
-                      id="newPassword" 
-                      type="password" 
+                    <Input
+                      id="newPassword"
+                      type="password"
                       placeholder="Enter new password (min 8 characters)"
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
@@ -195,9 +205,9 @@ export default function ProfilePage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input 
-                      id="confirmPassword" 
-                      type="password" 
+                    <Input
+                      id="confirmPassword"
+                      type="password"
                       placeholder="Confirm new password"
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
@@ -213,9 +223,9 @@ export default function ProfilePage() {
             </Card>
 
             <div className="flex gap-3">
-              <Button type="submit" disabled={isLoading} className="gap-2">
+              <Button type="submit" disabled={isLoading || isAuthLoading} className="gap-2">
                 <Save className="h-4 w-4" />
-                {isLoading ? "Saving..." : "Save Changes"}
+                {isAuthLoading ? "Loading..." : isLoading ? "Saving..." : "Save Changes"}
               </Button>
               <Button type="button" variant="outline" asChild>
                 <Link href="/account">Cancel</Link>

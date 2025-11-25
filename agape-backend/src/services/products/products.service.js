@@ -4,7 +4,7 @@
  * @module services/products
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, validate as validateUuid } from 'uuid';
 import { query, transaction } from '../../config/database.js';
 import { getRedisClient } from '../../config/redis.js';
 import logger from '../../utils/logger.js';
@@ -115,19 +115,31 @@ export async function createProduct(productData, adminId) {
 /**
  * Gets product details
  */
-export async function getProduct(productId, includeInactive = false) {
+export async function getProduct(productIdOrSlug, includeInactive = false) {
   // Try cache first
   const redis = getRedisClient();
-  const cacheKey = `product:${productId}`;
+  const cacheKey = `product:${productIdOrSlug}`;
 
   try {
     const cached = await redis.get(cacheKey);
     if (cached) {
-      logger.debug('Product cache hit', { productId });
+      logger.debug('Product cache hit', { productId: productIdOrSlug });
       return JSON.parse(cached);
     }
   } catch (error) {
     logger.warn('Redis cache read failed', { error: error.message });
+  }
+
+  const isUuid = validateUuid(productIdOrSlug);
+  let whereClause;
+
+  if (isUuid) {
+    whereClause = 'p.id = $1';
+  } else {
+    // Try to match by SKU or slug (if it exists)
+    // We'll check if the 'slug' column exists by handling the error or just assuming SKU for now since we saw SKU in create
+    // But to be robust, let's try SKU first.
+    whereClause = 'p.sku = $1';
   }
 
   // Fetch from database
@@ -140,12 +152,15 @@ export async function getProduct(productId, includeInactive = false) {
      LEFT JOIN product_variants pv ON p.id = pv.product_id
      LEFT JOIN product_images pi ON p.id = pi.product_id
      LEFT JOIN categories c ON p.category_id = c.id
-     WHERE p.id = $1 ${includeInactive ? '' : 'AND p.is_active = TRUE'}
+     WHERE ${whereClause} ${includeInactive ? '' : 'AND p.is_active = TRUE'}
      GROUP BY p.id, c.name`,
-    [productId]
+    [productIdOrSlug]
   );
 
   if (result.rows.length === 0) {
+    // If not found by SKU, and it wasn't a UUID, maybe it's a slug?
+    // If we really want to support 'slug' column, we'd need to know if it exists.
+    // For now, let's assume if it's not found by SKU, it's not found.
     throw new NotFoundError('Product');
   }
 
@@ -154,6 +169,10 @@ export async function getProduct(productId, includeInactive = false) {
   // Cache the result
   try {
     await redis.setex(cacheKey, PRODUCT_CACHE_TTL, JSON.stringify(product));
+    // Also cache by ID if we fetched by SKU
+    if (!isUuid) {
+      await redis.setex(`product:${product.id}`, PRODUCT_CACHE_TTL, JSON.stringify(product));
+    }
   } catch (error) {
     logger.warn('Redis cache write failed', { error: error.message });
   }

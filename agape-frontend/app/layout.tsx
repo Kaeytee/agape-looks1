@@ -10,6 +10,7 @@ import { Suspense, useEffect } from "react"
 import { QueryProvider } from "@/lib/providers/query-provider"
 import { CartProvider } from "@/lib/cart-context"
 import { WishlistProvider } from "@/lib/contexts/wishlist-context"
+import { AuthProvider } from "@/lib/contexts/auth-context"
 import { MiniCart } from "@/components/mini-cart"
 import { WhatsAppButton } from "@/components/whatsapp-button"
 import { CustomCursor } from "@/components/luxury/custom-cursor"
@@ -58,17 +59,19 @@ export default function RootLayout({
         <QueryProvider>
           <CartProvider>
             <WishlistProvider>
-              <Suspense fallback={null}>
-                <a
-                  href="#main-content"
-                  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-sm"
-                >
-                  Skip to main content
-                </a>
-                {children}
-              </Suspense>
-              <MiniCart />
-              <WhatsAppButton />
+              <AuthProvider>
+                <Suspense fallback={null}>
+                  <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-sm"
+                  >
+                    Skip to main content
+                  </a>
+                  {children}
+                </Suspense>
+                <MiniCart />
+                <WhatsAppButton />
+              </AuthProvider>
             </WishlistProvider>
           </CartProvider>
         </QueryProvider>

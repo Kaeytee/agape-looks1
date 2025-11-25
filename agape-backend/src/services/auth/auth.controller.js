@@ -5,6 +5,8 @@
 
 import * as authService from './auth.service.js';
 import { asyncHandler } from '../../middleware/error.middleware.js';
+import { query } from '../../config/database.js';
+import { NotFoundError, ValidationError } from '../../utils/errors.js';
 import logger from '../../utils/logger.js';
 import config from '../../config/index.js';
 
@@ -98,6 +100,103 @@ export const refresh = asyncHandler(async (req, res) => {
   res.json({
     status: 'success',
     data: { accessToken },
+  });
+});
+
+/**
+ * Get current authenticated user
+ * GET /api/v1/auth/me
+ */
+export const getMe = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Get user details with order and wishlist counts
+  const result = await query(
+    `SELECT 
+       u.id, u.email, u.name, u.phone, u.role, u.verified_at, u.created_at, u.updated_at,
+       (SELECT COUNT(*) FROM orders WHERE user_id = u.id) as order_count,
+       (SELECT COUNT(*) FROM wishlists WHERE user_id = u.id) as wishlist_count
+     FROM users u
+     WHERE u.id = $1`,
+    [userId]
+  );
+  
+  if (result.rows.length === 0) {
+    throw new NotFoundError('User not found');
+  }
+  
+  const user = result.rows[0];
+  
+  res.json({
+    status: 'success',
+    data: {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        verified: !!user.verified_at,
+        isEmailVerified: !!user.verified_at,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        orderCount: parseInt(user.order_count) || 0,
+        wishlistCount: parseInt(user.wishlist_count) || 0,
+      },
+    },
+  });
+});
+
+/**
+ * Update user profile
+ * PATCH /api/v1/auth/profile
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { name, phone } = req.body;
+  
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (phone !== undefined) updates.phone = phone;
+  
+  if (Object.keys(updates).length === 0) {
+    throw new ValidationError('No fields to update');
+  }
+  
+  const setClauses = Object.keys(updates).map((key, index) => `${key} = $${index + 1}`);
+  const values = [...Object.values(updates), userId];
+  
+  const result = await query(
+    `UPDATE users
+     SET ${setClauses.join(', ')}, updated_at = NOW()
+     WHERE id = $${values.length}
+     RETURNING id, email, name, phone, role, verified_at, created_at, updated_at`,
+    values
+  );
+  
+  if (result.rows.length === 0) {
+    throw new NotFoundError('User not found');
+  }
+  
+  const user = result.rows[0];
+  
+  logger.info('User profile updated', { userId });
+  
+  res.json({
+    status: 'success',
+    message: 'Profile updated successfully',
+    data: {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        verified: !!user.verified_at,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+      },
+    },
   });
 });
 

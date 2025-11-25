@@ -7,6 +7,8 @@
 import apiClient from '../api/client'
 
 // Type definitions for authentication
+import { User } from '../types'
+
 export interface LoginData {
   email: string
   password: string
@@ -17,15 +19,6 @@ export interface RegisterData {
   password: string
   name: string
   phone?: string
-}
-
-export interface User {
-  id: string
-  email: string
-  name: string
-  phone?: string
-  role: string
-  verified: boolean
 }
 
 export interface AuthResponse {
@@ -68,7 +61,7 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User> {
     const response = await apiClient.get('/auth/me')
-    return response.data
+    return response.data.data?.user || response.data.user || response.data
   }
 
   /**
@@ -115,6 +108,13 @@ class AuthService {
    */
   async revokeSession(sessionId: string): Promise<void> {
     await apiClient.delete(`/auth/sessions/${sessionId}`)
+  }
+
+  /**
+   * Change password for authenticated user
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiClient.post('/auth/change-password', { currentPassword, newPassword })
   }
 }
 

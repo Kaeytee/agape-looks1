@@ -50,13 +50,7 @@ app.use(compression());
 app.use(requestLogger);
 app.use(correlationId);
 
-// Global rate limiting
-app.use(rateLimit());
-
-// Serve static files (images, etc.)
-app.use(express.static('public'));
-
-// Health check endpoint
+// Health check endpoint (BEFORE rate limiting to exclude from limits)
 app.get('/healthz', (req, res) => {
   res.json({
     status: 'healthy',
@@ -65,6 +59,12 @@ app.get('/healthz', (req, res) => {
     environment: config.app.env,
   });
 });
+
+// Global rate limiting
+app.use(rateLimit());
+
+// Serve static files (images, etc.)
+app.use(express.static('public'));
 
 // API routes
 const apiRouter = express.Router();

@@ -77,7 +77,9 @@ const searchQuerySchema = Joi.object({
 // Public routes
 router.get('/search', validateQuery(searchQuerySchema), productsController.searchProducts);
 router.get('/categories', productsController.getCategories);
-router.get('/:id', validateParams(Joi.object({ id: uuidSchema })), productsController.getProduct);
+router.get('/:id', validateParams(Joi.object({
+  id: Joi.alternatives().try(uuidSchema, Joi.string())
+})), productsController.getProduct);
 router.get('/', validateQuery(listQuerySchema), productsController.listProducts);
 
 // Admin routes

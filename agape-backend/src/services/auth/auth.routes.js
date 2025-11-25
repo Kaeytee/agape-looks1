@@ -48,6 +48,8 @@ router.post('/password-reset-request', authRateLimit, authController.requestPass
 router.post('/password-reset', validateBody(resetPasswordSchema), authController.resetPassword);
 
 // Protected routes
+router.get('/me', authenticate, authController.getMe);
+router.patch('/profile', authenticate, authController.updateProfile);
 router.post('/logout', authenticate, authController.logout);
 router.get('/sessions', authenticate, authController.getSessions);
 router.delete('/sessions/:sessionId', authenticate, authController.revokeSession);

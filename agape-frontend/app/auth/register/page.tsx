@@ -7,13 +7,13 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { SiteHeader } from "@/components/site-header"
-import { Button } from "@/components/ui/button"
-import { SlideButton } from "@/components/ui/animated-button"
+import { StatefulButton } from "@/components/ui/stateful-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Cover } from "@/components/ui/cover"
 import { authService } from "@/lib/services/auth.service"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { Eye, EyeOff } from "lucide-react"
 
 export default function RegisterPage() {
@@ -31,11 +31,12 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
+  const { login } = useAuth()
+
   // Redirect if already logged in
   React.useEffect(() => {
     const token = localStorage.getItem("token")
-    const user = localStorage.getItem("user")
-    if (token && user) {
+    if (token) {
       router.push("/shop")
     }
   }, [router])
@@ -44,23 +45,24 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setError("")
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
-      return
+      throw new Error("Passwords do not match")
     }
 
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters")
-      return
+      throw new Error("Password too short")
     }
 
     if (!agreeToTerms) {
-      return
+      setError("Must agree to terms")
+      throw new Error("Must agree to terms")
     }
 
     setIsLoading(true)
@@ -74,24 +76,28 @@ export default function RegisterPage() {
         password: formData.password,
       })
 
-      // Store auth token and user data
+      // Store auth token
       if (response.accessToken) {
+        localStorage.setItem("accessToken", response.accessToken)
         localStorage.setItem("token", response.accessToken)
       }
-      localStorage.setItem("user", JSON.stringify(response.user))
 
-      // Trigger auth state update in header
-      window.dispatchEvent(new Event("login"))
-      window.dispatchEvent(new Event("storage"))
+      // Update context
+      login(response.user)
 
-      // Small delay to ensure state updates, then redirect to shop
-      setTimeout(() => {
-        router.push("/shop")
-      }, 100)
+      setIsLoading(false)
+
+      // Redirect to shop
+      router.push("/shop")
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Registration failed. Please try again.")
       setIsLoading(false)
+      throw err
     }
+  }
+
+  const handleButtonClick = async () => {
+    return handleSubmit()
   }
 
   const fabricImages = [
@@ -144,149 +150,149 @@ export default function RegisterPage() {
             </motion.div>
 
             <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
-                  {error}
-                </div>
-              )}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      placeholder="John"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      required
+                      autoComplete="given-name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      placeholder="Doe"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                      autoComplete="family-name"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={formData.firstName}
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
                     onChange={handleChange}
                     required
-                    autoComplete="given-name"
+                    autoComplete="email"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                    autoComplete="family-name"
-                  />
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="At least 8 characters"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Must be at least 8 characters with a mix of letters and numbers
+                  </p>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="At least 8 characters"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    autoComplete="new-password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Re-enter your password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      required
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Must be at least 8 characters with a mix of letters and numbers
-                </p>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Re-enter your password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    autoComplete="new-password"
-                    className="pr-10"
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={agreeToTerms}
+                    onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
+                    className="mt-1"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+                  <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-relaxed">
+                    I agree to the{" "}
+                    <Link href="/terms" className="text-primary hover:underline">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="text-primary hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </Label>
                 </div>
+
+                <StatefulButton type="button" className="w-full h-10" disabled={isLoading} onClick={handleButtonClick}>
+                  Create Account
+                </StatefulButton>
+              </form>
+
+              <div className="mt-6 text-center text-sm">
+                <span className="text-muted-foreground">Already have an account? </span>
+                <Link href="/auth/login" className="text-primary hover:underline font-medium">
+                  Sign in
+                </Link>
               </div>
-
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={agreeToTerms}
-                  onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
-                  className="mt-1"
-                />
-                <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-relaxed">
-                  I agree to the{" "}
-                  <Link href="/terms" className="text-primary hover:underline">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link href="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
-                </Label>
-              </div>
-
-              <SlideButton type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
-              </SlideButton>
-            </form>
-
-            <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Already have an account? </span>
-              <Link href="/auth/login" className="text-primary hover:underline font-medium">
-                Sign in
-              </Link>
             </div>
-          </div>
           </div>
         </div>
       </main>

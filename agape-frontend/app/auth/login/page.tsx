@@ -7,13 +7,13 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { SiteHeader } from "@/components/site-header"
-import { Button } from "@/components/ui/button"
-import { SlideButton } from "@/components/ui/animated-button"
+import { StatefulButton } from "@/components/ui/stateful-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Cover } from "@/components/ui/cover"
 import { authService } from "@/lib/services/auth.service"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
@@ -24,42 +24,48 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  
+
+  const { login } = useAuth()
+
   // Redirect if already logged in
   React.useEffect(() => {
     const token = localStorage.getItem("token")
-    const user = localStorage.getItem("user")
-    if (token && user) {
+    if (token) {
       router.push("/shop")
     }
   }, [router])
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setError("")
     setIsLoading(true)
 
     try {
       // Real authentication with backend
       const response = await authService.login({ email, password })
-      
-      // Store auth token and user data
+
+      // Store auth token
       if (response.accessToken) {
+        localStorage.setItem("accessToken", response.accessToken)
         localStorage.setItem("token", response.accessToken)
       }
-      localStorage.setItem("user", JSON.stringify(response.user))
-      
-      // Trigger auth state update in header
-      window.dispatchEvent(new Event("login"))
-      window.dispatchEvent(new Event("storage"))
-      
-      // Small delay to ensure state updates, then redirect to shop
-      setTimeout(() => {
-        router.push("/shop")
-      }, 100)
+
+      // Update context
+      login(response.user)
+
+      setIsLoading(false)
+
+      // Redirect to shop
+      router.push("/shop")
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || "Login failed. Please check your credentials.")
       setIsLoading(false)
+      throw err // Re-throw for StatefulButton if needed
     }
+  }
+
+  const handleButtonClick = async () => {
+    return handleSubmit()
   }
 
   const fabricImages = [
@@ -111,83 +117,83 @@ export default function LoginPage() {
               <p className="text-muted-foreground text-lg">Sign in to your Agape looks account</p>
             </motion.div>
 
-        <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
+            <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                    Remember me for 30 days
+                  </Label>
+                </div>
+
+                <StatefulButton type="button" className="w-full h-10" disabled={isLoading} onClick={handleButtonClick}>
+                  Sign In
+                </StatefulButton>
+              </form>
+
+              <div className="mt-6 text-center text-sm">
+                <span className="text-muted-foreground">Don't have an account? </span>
+                <Link href="/auth/register" className="text-primary hover:underline font-medium">
+                  Create account
                 </Link>
               </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              />
-              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                Remember me for 30 days
-              </Label>
-            </div>
-
-            <SlideButton type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
-            </SlideButton>
-          </form>
-
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <Link href="/auth/register" className="text-primary hover:underline font-medium">
-              Create account
-            </Link>
-          </div>
-        </div>
 
             <p className="text-center text-xs text-muted-foreground mt-6">
               By signing in, you agree to our{" "}

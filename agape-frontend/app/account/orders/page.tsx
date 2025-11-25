@@ -27,18 +27,16 @@ const statusConfig = {
   cancelled: { label: "Cancelled", variant: "destructive" as const, icon: XCircle },
 }
 
+import { useAuth } from "@/lib/contexts/auth-context"
+
 export default function OrdersPage() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false)
-  
-  // Check authentication before making API calls
-  React.useEffect(() => {
-    const token = localStorage.getItem("token")
-    setIsAuthenticated(!!token)
-  }, [])
-  
+  const { user, isLoading: isAuthLoading } = useAuth()
+  const isAuthenticated = !!user
+
   // Fetch orders from API with React Query (only if authenticated)
-  const { data: ordersData, isLoading, error } = useOrders(1, 50)
-  
+  const { data: ordersData, isLoading: isOrdersLoading, error } = useOrders(1, 50)
+
+  const isLoading = isAuthLoading || isOrdersLoading
   const orders = ordersData?.orders || []
 
   return (

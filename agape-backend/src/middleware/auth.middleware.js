@@ -28,47 +28,48 @@ function loadPublicKey() {
 export async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new AuthenticationError('No authentication token provided');
     }
-    
+
     const token = authHeader.substring(7);
-    
+
     // Verify JWT token
     const decoded = jwt.verify(token, loadPublicKey(), {
       algorithms: [config.jwt.algorithm],
       issuer: config.jwt.issuer,
       audience: config.jwt.audience,
     });
-    
+
     // Check if user still exists
     const result = await query(
-      'SELECT id, email, role, verified_at, locked_until FROM users WHERE id = $1',
+      'SELECT id, email, name, role, verified_at, locked_until FROM users WHERE id = $1',
       [decoded.sub]
     );
-    
+
     if (result.rows.length === 0) {
       throw new AuthenticationError('User not found');
     }
-    
+
     const user = result.rows[0];
-    
+
     // Check if account is locked
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       throw new AuthenticationError('Account is temporarily locked');
     }
-    
+
     // Attach user to request
     req.user = {
       id: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
       verified: !!user.verified_at,
     };
-    
+
     logger.debug('User authenticated', { userId: user.id, role: user.role });
-    
+
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -101,7 +102,7 @@ export function requireRole(...allowedRoles) {
     if (!req.user) {
       return next(new AuthenticationError());
     }
-    
+
     if (!allowedRoles.includes(req.user.role)) {
       logger.warn('Authorization failed', {
         userId: req.user.id,
@@ -110,7 +111,7 @@ export function requireRole(...allowedRoles) {
       });
       return next(new AuthorizationError());
     }
-    
+
     next();
   };
 }
@@ -122,11 +123,11 @@ export function requireVerified(req, res, next) {
   if (!req.user) {
     return next(new AuthenticationError());
   }
-  
+
   if (!req.user.verified) {
     return next(new AuthorizationError('Email verification required'));
   }
-  
+
   next();
 }
 

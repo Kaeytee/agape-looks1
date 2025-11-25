@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { SITE_CONFIG } from "@/lib/constants"
 import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/contexts/wishlist-context"
+import { useAuth } from "@/lib/contexts/auth-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,79 +33,21 @@ export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
   const [isScrolled, setIsScrolled] = React.useState(false)
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false)
-  const [userName, setUserName] = React.useState("")
-  const [userRole, setUserRole] = React.useState("")
+  const { user, logout } = useAuth()
+  const isAuthenticated = !!user
+  const userName = user?.name || user?.email || "User"
+  const userRole = user?.role || "customer"
+
   const pathname = usePathname()
   const router = useRouter()
   const { itemCount, openCart } = useCart()
   const { itemCount: wishlistCount } = useWishlist()
   const headerRef = React.useRef<HTMLDivElement>(null)
 
-  // Check authentication state
-  React.useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("token")
-      const userStr = localStorage.getItem("user")
-      
-      if (token && userStr) {
-        try {
-          const user = JSON.parse(userStr)
-          setIsAuthenticated(true)
-          setUserName(user.name || user.email || "User")
-          setUserRole(user.role || "customer")
-        } catch (e) {
-          setIsAuthenticated(false)
-          setUserName("")
-          setUserRole("")
-        }
-      } else {
-        setIsAuthenticated(false)
-        setUserName("")
-        setUserRole("")
-      }
-    }
-    
-    checkAuth()
-    // Listen for storage changes and custom login event
-    window.addEventListener("storage", checkAuth)
-    window.addEventListener("login", checkAuth)
-    return () => {
-      window.removeEventListener("storage", checkAuth)
-      window.removeEventListener("login", checkAuth)
-    }
-  }, [])
-
-  // Also check on pathname changes (navigation)
-  React.useEffect(() => {
-    const token = localStorage.getItem("token")
-    const userStr = localStorage.getItem("user")
-    
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        setIsAuthenticated(true)
-        setUserName(user.name || user.email || "User")
-        setUserRole(user.role || "customer")
-      } catch (e) {
-        setIsAuthenticated(false)
-        setUserName("")
-        setUserRole("")
-      }
-    } else {
-      setIsAuthenticated(false)
-      setUserName("")
-      setUserRole("")
-    }
-  }, [pathname])
-
   // Logout handler
   const handleLogout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    setIsAuthenticated(false)
-    setUserName("")
-    router.push("/")
+    logout()
+    setIsMenuOpen(false)
   }
 
   // Handle scroll effect
@@ -261,7 +204,7 @@ export function SiteHeader() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleLogout}
                       className="cursor-pointer text-destructive focus:text-destructive"
                     >
@@ -320,8 +263,8 @@ export function SiteHeader() {
               className="max-w-7xl mx-auto mt-2 px-4"
             >
               <div className="bg-card rounded-3xl shadow-xl border border-border/50 p-4 backdrop-blur-md">
-                <SearchBar 
-                  autoFocus 
+                <SearchBar
+                  autoFocus
                   onClose={() => setIsSearchOpen(false)}
                   className="border-0"
                 />
@@ -372,15 +315,10 @@ export function SiteHeader() {
                           Account
                         </Link>
                       </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         className="w-full justify-start text-destructive hover:text-destructive"
-                        onClick={() => {
-                          localStorage.removeItem("token")
-                          localStorage.removeItem("user")
-                          setIsAuthenticated(false)
-                          window.location.href = "/"
-                        }}
+                        onClick={handleLogout}
                       >
                         <LogOut className="h-5 w-5 mr-2" />
                         Logout
