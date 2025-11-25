@@ -7,7 +7,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios'
 
 // Configuration - Base API URL from environment or default to local backend
-const API_BASE_URL = 'http://localhost:4000/api/v1'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'
 
 // Create axios instance with defaults
 const apiClient: AxiosInstance = axios.create({
