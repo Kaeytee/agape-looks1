@@ -109,14 +109,9 @@ export async function register(userData) {
   };
   
   const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
+  const refreshToken = await generateRefreshToken(user); // Pass user object, not payload
   
-  // Store refresh token in Redis
-  await redis.setex(
-    `refresh_token:${user.id}:${refreshToken}`,
-    config.jwt.refreshExpiresIn,
-    JSON.stringify({ userId: user.id, createdAt: new Date().toISOString() })
-  );
+  // Note: refresh token is already stored in sessions table by generateRefreshToken
   
   logger.info('User registered and auto-logged in', { userId: user.id, email: user.email });
   
