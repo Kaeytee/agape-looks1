@@ -1,7 +1,6 @@
 "use client"
 import Link from "next/link"
 import { Package, ShoppingCart, Users, TrendingUp, Plus } from "lucide-react"
-import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminRouteGuard } from "@/components/admin-route-guard"
