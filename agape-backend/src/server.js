@@ -8,12 +8,18 @@ import config, { validateConfig } from './config/index.js';
 import { createPool, closePool, checkHealth } from './config/database.js';
 import { createRedisClient, closeRedis, checkRedisHealth } from './config/redis.js';
 import logger from './utils/logger.js';
+import { ensureJWTKeys } from './utils/generate-jwt-keys.js';
+import { startHealthPinger, stopHealthPinger } from './utils/health-pinger.js';
 
 /**
  * Starts the server
  */
 async function startServer() {
   try {
+    // Ensure JWT keys exist (generate if missing)
+    logger.info('Checking JWT keys...');
+    ensureJWTKeys();
+    
     // Validate configuration
     logger.info('Validating configuration...');
     validateConfig();
@@ -40,18 +46,23 @@ async function startServer() {
     const server = app.listen(config.app.port, () => {
       logger.info(`🚀 ${config.app.name} started successfully`, {
         port: config.app.port,
-        environment: config.app.env,
         nodeVersion: process.version,
         pid: process.pid,
       });
       
       logger.info(`📡 API available at http://localhost:${config.app.port}/api/${config.app.apiVersion}`);
       logger.info(`💚 Health check at http://localhost:${config.app.port}/healthz`);
+      
+      // Start health pinger (development only)
+      startHealthPinger();
     });
     
     // Graceful shutdown handler
     const gracefulShutdown = async (signal) => {
       logger.info(`${signal} received. Starting graceful shutdown...`);
+      
+      // Stop health pinger
+      stopHealthPinger();
       
       // Stop accepting new connections
       server.close(async () => {
