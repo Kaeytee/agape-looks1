@@ -174,21 +174,10 @@ export function SiteHeader() {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {userRole === "admin" && (
-                      <>
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin" className="cursor-pointer bg-primary/10">
-                            <Shield className="h-4 w-4 mr-2" />
-                            Admin Dashboard
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/account" className="cursor-pointer">
                         <User className="h-4 w-4 mr-2" />
-                        Account Dashboard
+                        Account
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -301,14 +290,6 @@ export function SiteHeader() {
                 <div className="pt-4 border-t border-border space-y-3">
                   {isAuthenticated ? (
                     <>
-                      {userRole === "admin" && (
-                        <Button variant="ghost" asChild className="w-full justify-start bg-primary/10">
-                          <Link href="/admin">
-                            <Shield className="h-5 w-5 mr-2" />
-                            Admin Dashboard
-                          </Link>
-                        </Button>
-                      )}
                       <Button variant="ghost" asChild className="w-full justify-start">
                         <Link href="/account">
                           <User className="h-5 w-5 mr-2" />
