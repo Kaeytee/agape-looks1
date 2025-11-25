@@ -25,6 +25,8 @@ export function createRedisClient() {
     maxRetriesPerRequest: 3,
     enableReadyCheck: true,
     lazyConnect: false,
+    // If TLS is required, provide an empty tls object so ioredis enables TLS
+    tls: config.redis.tls ? {} : undefined,
   });
 
   redisClient.on('connect', () => logger.info('Redis connected'));

@@ -55,20 +55,45 @@ const config = {
 
   // ===========================
   // Redis Configuration
+  // Supports either individual REDIS_HOST/PORT/PASSWORD or a single REDIS_URL
+  // Example REDIS_URL: redis://:password@hostname:6379/0 or rediss://:password@hostname:6379/0
   // ===========================
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-    db: parseInt(process.env.REDIS_DB, 10) || 0,
-    tls: process.env.REDIS_TLS === 'true',
-  keyPrefix: process.env.REDIS_KEY_PREFIX || 'agape_looks:',
-    // Connection retry strategy
-    retryStrategy: (times) => {
+  redis: (() => {
+    const makeRetry = () => (times) => {
       const delay = Math.min(times * 50, 2000);
       return delay;
-    },
-  },
+    };
+
+    if (process.env.REDIS_URL) {
+      try {
+        const url = new URL(process.env.REDIS_URL);
+        return {
+          host: url.hostname || (process.env.REDIS_HOST || 'localhost'),
+          port: url.port ? parseInt(url.port, 10) : (parseInt(process.env.REDIS_PORT, 10) || 6379),
+          password: url.password || process.env.REDIS_PASSWORD || undefined,
+          db: url.pathname && url.pathname !== '/' ? parseInt(url.pathname.slice(1), 10) : (parseInt(process.env.REDIS_DB, 10) || 0),
+          tls: url.protocol === 'rediss:' || process.env.REDIS_TLS === 'true',
+          keyPrefix: process.env.REDIS_KEY_PREFIX || 'agape_looks:',
+          retryStrategy: makeRetry(),
+        };
+      } catch (err) {
+        // Fallback to legacy env vars if URL parsing fails
+        // eslint-disable-next-line no-console
+        console.warn('Invalid REDIS_URL, falling back to individual REDIS_* env vars', err.message);
+      }
+    }
+
+    return {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      db: parseInt(process.env.REDIS_DB, 10) || 0,
+      tls: process.env.REDIS_TLS === 'true',
+      keyPrefix: process.env.REDIS_KEY_PREFIX || 'agape_looks:',
+      // Connection retry strategy
+      retryStrategy: makeRetry(),
+    };
+  })(),
 
   // ===========================
   // JWT Configuration
