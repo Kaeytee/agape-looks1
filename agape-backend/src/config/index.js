@@ -301,7 +301,6 @@ export function validateConfig() {
     'DB_NAME',
     'DB_USER',
     'DB_PASSWORD',
-    'REDIS_HOST',
   ];
 
   const missing = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -310,6 +309,14 @@ export function validateConfig() {
     throw new Error(
       `Missing required environment variables: ${missing.join(', ')}\n` +
       'Please check your .env file and ensure all required variables are set.'
+    );
+  }
+
+  // Check that Redis is configured (either REDIS_URL or REDIS_HOST)
+  if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+    throw new Error(
+      'Missing Redis configuration: Either REDIS_URL or REDIS_HOST must be set.\n' +
+      'Please check your .env file and ensure Redis is configured.'
     );
   }
 
