@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	const login = React.useCallback((userData: User) => {
 		setUser(userData)
+		localStorage.setItem('user_role', userData.role)
 		// Optionally persist basic user info if needed, but state is enough for runtime
 	}, [])
 
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		localStorage.removeItem('token')
 		localStorage.removeItem('refreshToken')
 		localStorage.removeItem('user')
+		localStorage.removeItem('user_role')
 		router.push('/auth/login')
 	}, [router])
 

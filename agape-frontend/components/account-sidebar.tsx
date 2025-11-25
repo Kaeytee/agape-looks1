@@ -110,13 +110,17 @@ export function AccountSidebar() {
 							</>
 						)}
 
-						<div className="my-2 border-t border-neutral-200 dark:border-neutral-700" />
-						<div className="px-2 py-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-							{open ? "Account" : "..."}
-						</div>
-						{links.map((link, idx) => (
-							<SidebarLink key={idx} link={link} />
-						))}
+						{!isAdmin && (
+							<>
+								<div className="my-2 border-t border-neutral-200 dark:border-neutral-700" />
+								<div className="px-2 py-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+									{open ? "Account" : "..."}
+								</div>
+								{links.map((link, idx) => (
+									<SidebarLink key={idx} link={link} />
+								))}
+							</>
+						)}
 					</div>
 				</div>
 				<div>

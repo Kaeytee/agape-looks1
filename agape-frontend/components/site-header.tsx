@@ -175,7 +175,7 @@ export function SiteHeader() {
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/account" className="cursor-pointer">
+                      <Link href={userRole === "admin" ? "/admin" : "/account"} className="cursor-pointer">
                         <User className="h-4 w-4 mr-2" />
                         Account
                       </Link>
