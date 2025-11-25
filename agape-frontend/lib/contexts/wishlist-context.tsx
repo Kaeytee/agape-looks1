@@ -54,8 +54,15 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
             setItems([])
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load wishlist:', error)
+        
+        // If authentication error (401/403), clear invalid token
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('refreshToken')
+        }
+        
         // Fallback to localStorage
         const savedWishlist = localStorage.getItem('wishlist')
         if (savedWishlist) {
