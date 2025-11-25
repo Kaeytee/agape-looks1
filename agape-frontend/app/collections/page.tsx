@@ -28,88 +28,40 @@ interface Collection {
   color?: string
 }
 
-// Collection categories
-const collections: Collection[] = [
-  {
-    id: '1',
-    name: 'Brocade Patterns',
-    slug: 'brocade-patterns',
-    description: 'Brocade with classic patterns passed down through generations',
-    image: '/brocade-material-red-purple.jpeg',
-    productCount: 24,
-    featured: true,
-    color: 'from-amber-500 to-amber-700',
-  },
-  {
-    id: '2',
-    name: 'Royal Collection',
-    slug: 'royal-collection',
-    description: 'Premium Two Toned lace featuring gold and intricate patterns for special occasions',
-    image: '/royal-collection-lace.jpg',
-    productCount: 18,
-    featured: true,
-    color: 'from-yellow-600 to-amber-800',
-  },
-  {
-    id: '3',
-    name: 'Wedding Collection',
-    slug: 'wedding',
-    description: 'Elegant pieces perfect for weddings, engagements, and celebrations',
-    image: '/beaded-lace-style-purple.jpeg',
-    productCount: 32,
-    color: 'from-rose-500 to-pink-700',
-  },
-  {
-    id: '4',
-    name: 'Festival Wear',
-    slug: 'festival',
-    description: 'Vibrant and colorful Lace designs for festivals and cultural events',
-    image: '/brocade-style-red.jpeg',
-    productCount: 28,
-    color: 'from-purple-500 to-purple-700',
-  },
-  {
-    id: '5',
-    name: 'Graduation Collection',
-    slug: 'graduation',
-    description: 'Sophisticated Lace stoles and sashes for academic ceremonies',
-    image: '/brocade-style-blue.jpeg',
-    productCount: 15,
-    color: 'from-blue-500 to-blue-700',
-  },
-  {
-    id: '6',
-    name: 'Modern Fusion',
-    slug: 'modern-fusion',
-    description: 'Contemporary designs blending traditional wear with modern aesthetics',
-    image: '/modern-fusion-collection.jpg',
-    productCount: 20,
-    color: 'from-emerald-500 to-teal-700',
-  },
-  {
-    id: '7',
-    name: 'Limited Edition',
-    slug: 'limited-edition',
-    description: 'Exclusive, rare patterns available in limited quantities',
-    image: '/embroided-lace-collection.jpeg',
-    productCount: 8,
-    featured: true,
-    color: 'from-red-500 to-red-700',
-  },
-  {
-    id: '8',
-    name: 'Everyday Elegance',
-    slug: 'everyday',
-    description: 'Comfortable and stylish woven pieces for daily wear',
-    image: '/two-toned-lace-style-pink-white-bg.png',
-    productCount: 36,
-    color: 'from-slate-500 to-slate-700',
-  },
-]
+import { useCollections } from '@/lib/hooks/useCollections'
+import { Skeleton } from '@/components/ui/skeleton'
+
+// ... (keep interface Collection if needed, but better to import from API types or define locally matching API)
+// Actually, I'll redefine it or import it. The API returns the same structure.
 
 export default function CollectionsPage() {
-  const featuredCollections = collections.filter((c) => c.featured)
-  const regularCollections = collections.filter((c) => !c.featured)
+  const { data: collections, isLoading } = useCollections()
+
+  const featuredCollections = collections?.filter((c) => c.featured) || []
+  const regularCollections = collections?.filter((c) => !c.featured) || []
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex-1 container mx-auto px-4 py-16">
+          <div className="space-y-8">
+            <Skeleton className="h-[60vh] w-full rounded-xl" />
+            <div className="grid md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="aspect-square rounded-2xl" />
+              ))}
+            </div>
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    )
+  }
+
+  // If no collections, maybe show empty state or just render empty sections
+  const allCollections = collections || []
+
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -131,7 +83,7 @@ export default function CollectionsPage() {
 
           {/* Hero Content */}
           <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-            <TypewriterEffectSmooth 
+            <TypewriterEffectSmooth
               words={[
                 { text: "Explore", className: "text-foreground font-display font-bold" },
                 { text: "Our", className: "text-foreground font-display font-bold" },
@@ -140,7 +92,7 @@ export default function CollectionsPage() {
               className="justify-start mb-6"
               cursorClassName="bg-primary"
             />
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 3 }}
@@ -150,15 +102,15 @@ export default function CollectionsPage() {
               Each collection tells a unique story of Ghanaian heritage and craftsmanship.
             </motion.p>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 3.5 }}
               className="flex items-center gap-4 text-sm text-white/80"
             >
-              <span>{collections.length} Collections</span>
+              <span>{allCollections.length} Collections</span>
               <span>•</span>
-              <span>{collections.reduce((sum, c) => sum + c.productCount, 0)} Products</span>
+              <span>{allCollections.reduce((sum, c) => sum + c.productCount, 0)} Products</span>
             </motion.div>
           </div>
         </section>

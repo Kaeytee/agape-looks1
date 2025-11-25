@@ -20,10 +20,10 @@ cloudinary.config({
  */
 export async function uploadImage(file, options = {}) {
   const { folder = config.cloudinary.folder, tags = [] } = options;
-  
+
   try {
     const result = await cloudinary.uploader.upload(file, {
-      folder,
+      folder: 'agape-looks/products',
       tags,
       resource_type: 'image',
       transformation: [
@@ -32,12 +32,12 @@ export async function uploadImage(file, options = {}) {
         { fetch_format: 'auto' },
       ],
     });
-    
+
     logger.info('Image uploaded to Cloudinary', {
       publicId: result.public_id,
       url: result.secure_url,
     });
-    
+
     return {
       publicId: result.public_id,
       url: result.secure_url,
@@ -58,9 +58,9 @@ export async function uploadImage(file, options = {}) {
 export async function deleteImage(publicId) {
   try {
     const result = await cloudinary.uploader.destroy(publicId);
-    
+
     logger.info('Image deleted from Cloudinary', { publicId });
-    
+
     return result;
   } catch (error) {
     logger.error('Cloudinary delete failed', { error: error.message });
@@ -77,9 +77,9 @@ export function generateSignedUploadUrl(options = {}) {
     timestamp,
     folder: options.folder || config.cloudinary.folder,
   };
-  
+
   const signature = cloudinary.utils.api_sign_request(params, config.cloudinary.apiSecret);
-  
+
   return {
     url: `https://api.cloudinary.com/v1_1/${config.cloudinary.cloudName}/image/upload`,
     timestamp,

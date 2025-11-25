@@ -11,15 +11,16 @@ import { ValidationError } from '../utils/errors.js';
 export function validateBody(schema) {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.body, { abortEarly: false });
-    
+
     if (error) {
       const details = error.details.map(d => ({
         field: d.path.join('.'),
         message: d.message,
       }));
+      console.error('Validation Error Details:', JSON.stringify(details, null, 2));
       return next(new ValidationError('Request validation failed', details));
     }
-    
+
     req.body = value;
     next();
   };
@@ -31,7 +32,7 @@ export function validateBody(schema) {
 export function validateQuery(schema) {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.query, { abortEarly: false });
-    
+
     if (error) {
       const details = error.details.map(d => ({
         field: d.path.join('.'),
@@ -39,7 +40,7 @@ export function validateQuery(schema) {
       }));
       return next(new ValidationError('Query validation failed', details));
     }
-    
+
     req.query = value;
     next();
   };
@@ -51,7 +52,7 @@ export function validateQuery(schema) {
 export function validateParams(schema) {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.params, { abortEarly: false });
-    
+
     if (error) {
       const details = error.details.map(d => ({
         field: d.path.join('.'),
@@ -59,7 +60,7 @@ export function validateParams(schema) {
       }));
       return next(new ValidationError('Parameter validation failed', details));
     }
-    
+
     req.params = value;
     next();
   };

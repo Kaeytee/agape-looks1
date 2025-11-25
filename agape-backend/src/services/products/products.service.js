@@ -16,21 +16,20 @@ const CATEGORY_CACHE_TTL = 3600; // 1 hour
 /**
  * Creates a new product
  */
-export async function createProduct(productData, adminId) {
-  const {
-    sku,
-    title,
-    description,
-    price,
-    currency = 'NGN',
-    categoryId,
-    weight,
-    dimensions,
-    variants = [],
-    images = [],
-    metadata = {},
-  } = productData;
-
+export async function createProduct({
+  sku,
+  title,
+  slug,
+  description,
+  price,
+  currency = 'NGN',
+  weight,
+  dimensions,
+  collectionId,
+  images = [],
+  variants = [],
+  metadata = {},
+}, adminId) {
   return await transaction(async (client) => {
     // Check for duplicate SKU
     const existingSku = await client.query('SELECT id FROM products WHERE sku = $1', [sku]);
@@ -38,21 +37,41 @@ export async function createProduct(productData, adminId) {
       throw new ValidationError('Product with this SKU already exists');
     }
 
+    // Check for duplicate Slug
+    if (slug) {
+      const existingSlug = await client.query('SELECT id FROM products WHERE slug = $1', [slug]);
+      if (existingSlug.rows.length > 0) {
+        throw new ValidationError('Product with this Slug already exists');
+      }
+    }
+
+    // Log and verify collectionId if provided
+    if (collectionId) {
+      logger.info('Attempting to create product with collectionId', { collectionId });
+      const collectionCheck = await client.query('SELECT id, name FROM collections WHERE id = $1', [collectionId]);
+      if (collectionCheck.rows.length === 0) {
+        logger.error('Collection not found in database', { collectionId });
+        throw new ValidationError(`Collection with ID ${collectionId} does not exist`);
+      }
+      logger.info('Collection verified', { collection: collectionCheck.rows[0] });
+    }
+
     // Create product
     const productResult = await client.query(
-      `INSERT INTO products (id, sku, title, description, price, currency, weight, dimensions, category_id, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO products (id, sku, title, slug, description, price, currency, weight, dimensions, collection_id, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         uuidv4(),
         sku,
         title,
+        slug,
         description,
         price,
         currency,
         weight,
         JSON.stringify(dimensions || {}),
-        categoryId,
+        collectionId,
         JSON.stringify(metadata),
       ]
     );
@@ -147,11 +166,11 @@ export async function getProduct(productIdOrSlug, includeInactive = false) {
     `SELECT p.*,
             json_agg(DISTINCT pv.*) FILTER (WHERE pv.id IS NOT NULL) as variants,
             json_agg(DISTINCT pi.*) FILTER (WHERE pi.id IS NOT NULL) as images,
-            c.name as category_name
+            c.name as collection_name
      FROM products p
      LEFT JOIN product_variants pv ON p.id = pv.product_id
      LEFT JOIN product_images pi ON p.id = pi.product_id
-     LEFT JOIN categories c ON p.category_id = c.id
+     LEFT JOIN collections c ON p.collection_id = c.id
      WHERE ${whereClause} ${includeInactive ? '' : 'AND p.is_active = TRUE'}
      GROUP BY p.id, c.name`,
     [productIdOrSlug]
@@ -205,7 +224,7 @@ export async function listProducts(filters = {}) {
   let paramIndex = 1;
 
   if (categoryId) {
-    whereClause += ` AND p.category_id = $${paramIndex}`;
+    whereClause += ` AND p.collection_id = $${paramIndex}`;
     params.push(categoryId);
     paramIndex++;
   }
@@ -271,13 +290,13 @@ export async function listProducts(filters = {}) {
   params.push(limit, offset);
 
   const sqlQuery = `SELECT p.*,
-            c.name as category_name,
+            c.name as collection_name,
             (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) as thumbnail,
             (SELECT json_agg(pi.* ORDER BY pi.position) 
              FROM product_images pi 
              WHERE pi.product_id = p.id) as images
      FROM products p
-     LEFT JOIN categories c ON p.category_id = c.id
+     LEFT JOIN collections c ON p.collection_id = c.id
      ${whereClause}
      ORDER BY p.${sortColumn} ${sortDirection}
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
@@ -314,7 +333,7 @@ export async function updateProduct(productId, updates, adminId) {
     const params = [productId];
     let paramIndex = 2;
 
-    const allowedFields = ['title', 'description', 'price', 'weight', 'dimensions', 'category_id', 'is_active', 'metadata'];
+    const allowedFields = ['title', 'description', 'price', 'weight', 'dimensions', 'collection_id', 'is_active', 'metadata'];
 
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
@@ -389,14 +408,14 @@ export async function searchProducts(searchQuery, filters = {}) {
 
   const result = await query(
     `SELECT p.*,
-            c.name as category_name,
+            c.name as collection_name,
             ts_rank(p.search_vector, query) as rank,
             (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) as thumbnail,
             (SELECT json_agg(pi.* ORDER BY pi.position) 
              FROM product_images pi 
              WHERE pi.product_id = p.id) as images
      FROM products p
-     LEFT JOIN categories c ON p.category_id = c.id,
+     LEFT JOIN collections c ON p.collection_id = c.id,
      plainto_tsquery('english', $1) query
      WHERE p.search_vector @@ query AND p.is_active = TRUE
      ORDER BY rank DESC, p.created_at DESC

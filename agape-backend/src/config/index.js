@@ -28,7 +28,7 @@ const config = {
   // Application Configuration
   // ===========================
   app: {
-  name: process.env.APP_NAME || 'AGAPE LOOKS Backend',
+    name: process.env.APP_NAME || 'AGAPE LOOKS Backend',
     env: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT, 10) || 3000,
     apiVersion: process.env.API_VERSION || 'v1',
@@ -41,7 +41,7 @@ const config = {
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT, 10) || 5432,
-  name: process.env.DB_NAME || 'agape_looks',
+    name: process.env.DB_NAME || 'agape_looks',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
     ssl: process.env.DB_SSL === 'true',
@@ -103,8 +103,8 @@ const config = {
     publicKeyPath: process.env.JWT_PUBLIC_KEY_PATH || join(__dirname, '../../keys/jwt-public.pem'),
     accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',
     refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY || '30d',
-  issuer: process.env.JWT_ISSUER || 'agape-looks',
-  audience: process.env.JWT_AUDIENCE || 'agape-looks-api',
+    issuer: process.env.JWT_ISSUER || 'agape-looks',
+    audience: process.env.JWT_AUDIENCE || 'agape-looks-api',
     algorithm: 'RS256',
   },
 
@@ -153,7 +153,7 @@ const config = {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     apiKey: process.env.CLOUDINARY_API_KEY || '',
     apiSecret: process.env.CLOUDINARY_API_SECRET || '',
-  folder: process.env.CLOUDINARY_FOLDER || 'agape-wone',
+    folder: process.env.CLOUDINARY_FOLDER || 'agape-looks',
     secure: process.env.CLOUDINARY_SECURE !== 'false',
   },
 
@@ -162,25 +162,25 @@ const config = {
   // ===========================
   resend: {
     apiKey: process.env.RESEND_API_KEY || '',
-  fromEmail: process.env.RESEND_FROM_EMAIL || 'noreply@agapelooks.com',
-  fromName: process.env.RESEND_FROM_NAME || 'AGAPE LOOKS',
-  replyTo: process.env.RESEND_REPLY_TO || 'support@agapelooks.com',
+    fromEmail: process.env.RESEND_FROM_EMAIL || 'noreply@agapelooks.com',
+    fromName: process.env.RESEND_FROM_NAME || 'AGAPE LOOKS',
+    replyTo: process.env.RESEND_REPLY_TO || 'support@agapelooks.com',
   },
 
   // ===========================
   // Email Configuration
   // ===========================
   email: {
-  frontendUrl: process.env.FRONTEND_URL || 'https://agapelooks.com',
-  verificationUrl: process.env.EMAIL_VERIFICATION_URL || 'https://agapelooks.com/verify-email',
-  passwordResetUrl: process.env.PASSWORD_RESET_URL || 'https://agapelooks.com/reset-password',
+    frontendUrl: process.env.FRONTEND_URL || 'https://agapelooks.com',
+    verificationUrl: process.env.EMAIL_VERIFICATION_URL || 'https://agapelooks.com/verify-email',
+    passwordResetUrl: process.env.PASSWORD_RESET_URL || 'https://agapelooks.com/reset-password',
   },
 
   // ===========================
   // Session Configuration
   // ===========================
   session: {
-  cookieName: process.env.SESSION_COOKIE_NAME || 'agape_looks_refresh_token',
+    cookieName: process.env.SESSION_COOKIE_NAME || 'agape_looks_refresh_token',
     cookieSecure: process.env.SESSION_COOKIE_SECURE !== 'false',
     cookieHttpOnly: process.env.SESSION_COOKIE_HTTP_ONLY !== 'false',
     cookieSameSite: process.env.SESSION_COOKIE_SAME_SITE || 'strict',
@@ -285,8 +285,8 @@ const config = {
   // ===========================
   upload: {
     maxFileSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 10,
-    allowedImageTypes: process.env.ALLOWED_IMAGE_TYPES 
-      ? process.env.ALLOWED_IMAGE_TYPES.split(',') 
+    allowedImageTypes: process.env.ALLOWED_IMAGE_TYPES
+      ? process.env.ALLOWED_IMAGE_TYPES.split(',')
       : ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
     maxImagesPerProduct: parseInt(process.env.MAX_IMAGES_PER_PRODUCT, 10) || 10,
   },
@@ -323,15 +323,15 @@ export function validateConfig() {
 
   // Warn about missing optional but important variables
   const warnings = [];
-  
+
   if (!config.paystack.secretKey) {
     warnings.push('PAYSTACK_SECRET_KEY is not set - payment processing will not work');
   }
-  
+
   if (!config.cloudinary.cloudName) {
     warnings.push('CLOUDINARY_CLOUD_NAME is not set - media uploads will not work');
   }
-  
+
   if (!config.resend.apiKey) {
     warnings.push('RESEND_API_KEY is not set - email notifications will not work');
   }

@@ -218,6 +218,151 @@ async function seedProducts() {
   logger.info('✓ Products seeded successfully')
 }
 
+// Sample collections data
+const sampleCollections = [
+  {
+    name: 'Brocade Patterns',
+    slug: 'brocade-patterns',
+    description: 'Brocade with classic patterns passed down through generations',
+    image: '/brocade-material-red-purple.jpeg',
+    featured: true,
+    color: 'from-amber-500 to-amber-700',
+  },
+  {
+    name: 'Royal Collection',
+    slug: 'royal-collection',
+    description: 'Premium Two Toned lace featuring gold and intricate patterns for special occasions',
+    image: '/royal-collection-lace.jpg',
+    featured: true,
+    color: 'from-yellow-600 to-amber-800',
+  },
+  {
+    name: 'Wedding Collection',
+    slug: 'wedding',
+    description: 'Elegant pieces perfect for weddings, engagements, and celebrations',
+    image: '/beaded-lace-style-purple.jpeg',
+    color: 'from-rose-500 to-pink-700',
+  },
+  {
+    name: 'Festival Wear',
+    slug: 'festival',
+    description: 'Vibrant and colorful Lace designs for festivals and cultural events',
+    image: '/brocade-style-red.jpeg',
+    color: 'from-purple-500 to-purple-700',
+  },
+  {
+    name: 'Graduation Collection',
+    slug: 'graduation',
+    description: 'Sophisticated Lace stoles and sashes for academic ceremonies',
+    image: '/brocade-style-blue.jpeg',
+    color: 'from-blue-500 to-blue-700',
+  },
+  {
+    name: 'Modern Fusion',
+    slug: 'modern-fusion',
+    description: 'Contemporary designs blending traditional wear with modern aesthetics',
+    image: '/modern-fusion-collection.jpg',
+    color: 'from-emerald-500 to-teal-700',
+  },
+  {
+    name: 'Limited Edition',
+    slug: 'limited-edition',
+    description: 'Exclusive, rare patterns available in limited quantities',
+    image: '/embroided-lace-collection.jpeg',
+    featured: true,
+    color: 'from-red-500 to-red-700',
+  },
+  {
+    name: 'Everyday Elegance',
+    slug: 'everyday',
+    description: 'Comfortable and stylish woven pieces for daily wear',
+    image: '/two-toned-lace-style-pink-white-bg.png',
+    color: 'from-slate-500 to-slate-700',
+  },
+]
+
+/**
+ * Seed collections into database
+ */
+async function seedCollections() {
+  logger.info('Seeding collections...')
+
+  for (const collection of sampleCollections) {
+    try {
+      // Check if collection already exists
+      const existing = await query(
+        'SELECT id FROM collections WHERE slug = $1',
+        [collection.slug]
+      )
+
+      if (existing.rows.length > 0) {
+        logger.info(`Collection ${collection.slug} already exists, skipping...`)
+        continue
+      }
+
+      // Insert collection
+      await query(`
+        INSERT INTO collections (
+          name, slug, description, image, featured, color
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6
+        )
+      `, [
+        collection.name,
+        collection.slug,
+        collection.description,
+        collection.image,
+        collection.featured || false,
+        collection.color
+      ])
+
+      logger.info(`✓ Created collection: ${collection.name}`)
+
+    } catch (error) {
+      console.error(`Error seeding collection ${collection.slug}:`, error)
+      logger.error(`Error seeding collection ${collection.slug}:`, error)
+    }
+  }
+
+  logger.info('✓ Collections seeded successfully')
+}
+
+/**
+ * Link products to collections
+ */
+async function seedProductCollections() {
+  logger.info('Linking products to collections...')
+
+  const products = await query('SELECT id FROM products')
+  const collections = await query('SELECT id FROM collections')
+
+  if (products.rows.length === 0 || collections.rows.length === 0) {
+    logger.warn('No products or collections found to link')
+    return
+  }
+
+  for (const product of products.rows) {
+    // Assign to 1-3 random collections
+    const numCollections = Math.floor(Math.random() * 3) + 1
+    const shuffled = [...collections.rows].sort(() => 0.5 - Math.random())
+    const selected = shuffled.slice(0, numCollections)
+
+    for (const collection of selected) {
+      try {
+        await query(`
+          INSERT INTO product_collections (product_id, collection_id)
+          VALUES ($1, $2)
+          ON CONFLICT DO NOTHING
+        `, [product.id, collection.id])
+      } catch (error) {
+        logger.error('Error linking product to collection:', error)
+      }
+    }
+  }
+
+  logger.info('✓ Products linked to collections successfully')
+}
+
 /**
  * Main seeder function
  */
@@ -226,6 +371,8 @@ async function seed() {
     logger.info('Starting database seeding...')
 
     await seedProducts()
+    await seedCollections()
+    await seedProductCollections()
 
     logger.info('✓ Database seeding completed successfully')
     await closePool()

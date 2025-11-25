@@ -15,10 +15,11 @@ const router = express.Router();
 const createProductSchema = Joi.object({
   sku: Joi.string().required(),
   title: Joi.string().min(3).max(500).required(),
-  description: Joi.string().optional(),
+  slug: Joi.string().required(),
+  description: Joi.string().optional().allow('', null),
   price: Joi.number().positive().required(),
   currency: Joi.string().length(3).default('NGN'),
-  categoryId: uuidSchema.optional(),
+  collectionId: Joi.alternatives().try(uuidSchema, Joi.allow(null)).optional(),
   weight: Joi.number().positive().optional(),
   dimensions: Joi.object().optional(),
   variants: Joi.array().items(Joi.object({
@@ -42,7 +43,7 @@ const updateProductSchema = Joi.object({
   price: Joi.number().positive().optional(),
   weight: Joi.number().positive().optional(),
   dimensions: Joi.object().optional(),
-  category_id: uuidSchema.optional(),
+  collection_id: uuidSchema.optional(),
   is_active: Joi.boolean().optional(),
   metadata: Joi.object().optional(),
 });

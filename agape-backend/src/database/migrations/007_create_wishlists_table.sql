@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS wishlists (
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_wishlists_user_id ON wishlists(user_id);
-CREATE INDEX idx_wishlists_product_id ON wishlists(product_id);
-CREATE INDEX idx_wishlists_created_at ON wishlists(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists(user_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_product_id ON wishlists(product_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_created_at ON wishlists(created_at DESC);
 
 -- Add comments for documentation
 COMMENT ON TABLE wishlists IS 'User wishlist items';
