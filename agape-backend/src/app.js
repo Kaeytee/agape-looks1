@@ -24,6 +24,7 @@ import adminRoutes from './services/admin/admin.routes.js';
 import wishlistRoutes from './services/wishlist/wishlist.routes.js';
 import collectionsRoutes from './services/collections/collections.routes.js';
 import settingsRoutes from './services/settings/settings.routes.js';
+import couponRoutes from './services/coupons/coupon.routes.js';
 
 const app = express();
 
@@ -81,6 +82,7 @@ apiRouter.use('/media', mediaRoutes);
 apiRouter.use('/wishlist', wishlistRoutes);
 apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/settings', settingsRoutes);
+apiRouter.use('/coupons', couponRoutes);
 
 app.use(`/api/${config.app.apiVersion}`, apiRouter);
 

@@ -220,7 +220,7 @@ const config = {
     webhookRetryAttempts: parseInt(process.env.PAYMENT_WEBHOOK_RETRY_ATTEMPTS, 10) || 3,
     webhookRetryDelayMs: parseInt(process.env.PAYMENT_WEBHOOK_RETRY_DELAY_MS, 10) || 5000,
     reconciliationSchedule: process.env.PAYMENT_RECONCILIATION_SCHEDULE || '0 2 * * *', // 2 AM daily
-    currency: process.env.PAYMENT_CURRENCY || 'NGN',
+    currency: process.env.PAYMENT_CURRENCY || 'GHS',
   },
 
   // ===========================

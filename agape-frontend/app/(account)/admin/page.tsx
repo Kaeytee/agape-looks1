@@ -1,6 +1,6 @@
 "use client"
 import Link from "next/link"
-import { Package, ShoppingCart, Users, TrendingUp, Plus } from "lucide-react"
+import { Package, ShoppingCart, Users, TrendingUp, Plus, Ticket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminRouteGuard } from "@/components/admin-route-guard"
@@ -37,7 +37,13 @@ export default function AdminPage() {
       title: "Revenue",
       value: formatCurrency(Number(statsData?.orders.total_revenue || 0)),
       change: `Avg. Order: ${formatCurrency(Number(statsData?.orders.average_order_value || 0))}`,
-      icon: TrendingUp, // Keep TrendingUp or create an animated one if desired, but user asked for products, orders, customers
+      icon: TrendingUp,
+    },
+    {
+      title: "Active Coupons",
+      value: statsData?.coupons?.active_coupons || "0",
+      change: `${statsData?.coupons?.total_redemptions || 0} redemptions`,
+      icon: Ticket,
     },
   ]
 
@@ -58,15 +64,15 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
               <Card key={stat.title}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                  {/* If it's one of our custom animated icons, it renders directly. If it's a Lucide icon (like TrendingUp), render it as a component */}
-                  {stat.title === "Revenue" ? (
+                  {/* If it's one of our custom animated icons, it renders directly. If it's a Lucide icon (like TrendingUp, Ticket), render it as a component */}
+                  {stat.title === "Revenue" || stat.title === "Active Coupons" ? (
                     <Icon className="h-4 w-4 text-muted-foreground" />
                   ) : (
                     <div className="scale-75 origin-right">
@@ -131,6 +137,20 @@ export default function AdminPage() {
                   <div>
                     <CardTitle>Customers</CardTitle>
                     <CardDescription>View customers</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/admin/coupons">
+            <Card className="hover:shadow-card-hover transition-shadow cursor-pointer group">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Ticket className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
+                  <div>
+                    <CardTitle>Coupons</CardTitle>
+                    <CardDescription>Manage discounts</CardDescription>
                   </div>
                 </div>
               </CardHeader>

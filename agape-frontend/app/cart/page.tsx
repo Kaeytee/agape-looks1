@@ -10,25 +10,49 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/lib/cart-context"
 import { useProducts } from "@/lib/hooks/useProducts"
+import { useApplyCoupon } from "@/lib/hooks/useCoupons"
 import { formatCurrency } from "@/lib/utils"
+import { toast } from "sonner"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, deliveryFee, freeShippingThreshold } = useCart()
 
   // Fetch products to get full product details
   const { data: productsData } = useProducts({})
-  const [promoCode, setPromoCode] = React.useState("")
-  const [promoApplied, setPromoApplied] = React.useState(false)
+  const [couponCode, setCouponCode] = React.useState("")
+  const [appliedCoupon, setAppliedCoupon] = React.useState<any>(null)
+  const applyCouponMutation = useApplyCoupon()
 
-  const discount = promoApplied ? subtotal * 0.05 : 0
-  const shipping = subtotal > freeShippingThreshold ? 0 : deliveryFee
+  const baseShipping = subtotal >= freeShippingThreshold ? 0 : deliveryFee
+  const discount = appliedCoupon?.discount || 0
+  const shipping = appliedCoupon?.freeShipping ? 0 : baseShipping
   const total = subtotal - discount + shipping
 
-  const handleApplyPromo = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (promoCode.toLowerCase() === "welcome5") {
-      setPromoApplied(true)
+    if (!couponCode.trim()) {
+      toast.error("Please enter a coupon code")
+      return
     }
+
+    try {
+      const result = await applyCouponMutation.mutateAsync({
+        code: couponCode.trim(),
+        cartSubtotal: subtotal,
+        shippingFee: baseShipping,
+      })
+      setAppliedCoupon(result)
+      toast.success(`Coupon "${result.code}" applied successfully!`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Invalid coupon code")
+      setAppliedCoupon(null)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode("")
+    toast.success("Coupon removed")
   }
 
   return (
@@ -146,19 +170,24 @@ export default function CartPage() {
                         <span className="font-medium">{formatCurrency(subtotal)}</span>
                       </div>
 
-                      {promoApplied && (
+                      {appliedCoupon && (
                         <div className="flex justify-between text-success">
-                          <span>Discount (5%)</span>
+                          <span>
+                            Discount ({appliedCoupon.code})
+                            {appliedCoupon.type === "free_shipping" && " - Free Shipping"}
+                          </span>
                           <span>-{formatCurrency(discount)}</span>
                         </div>
                       )}
 
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Shipping</span>
-                        <span className="font-medium">{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
+                        <span className="font-medium">
+                          {shipping === 0 ? "Free" : formatCurrency(shipping)}
+                        </span>
                       </div>
 
-                      {subtotal < freeShippingThreshold && (
+                      {subtotal < freeShippingThreshold && !appliedCoupon?.freeShipping && (
                         <p className="text-xs text-muted-foreground">
                           Add {formatCurrency(freeShippingThreshold - subtotal)} more for free shipping
                         </p>
@@ -182,22 +211,53 @@ export default function CartPage() {
                     </Button>
                   </div>
 
-                  {/* Promo code */}
+                  {/* Coupon code */}
                   <div className="border border-border rounded-(--radius-md) p-6 bg-card">
-                    <h3 className="font-semibold mb-3">Promo Code</h3>
-                    <form onSubmit={handleApplyPromo} className="flex gap-2">
-                      <Input
-                        type="text"
-                        placeholder="Enter code"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        disabled={promoApplied}
-                      />
-                      <Button type="submit" variant="outline" disabled={promoApplied}>
-                        {promoApplied ? "Applied" : "Apply"}
-                      </Button>
-                    </form>
-                    {promoApplied && <p className="text-sm text-success mt-2">Promo code applied successfully!</p>}
+                    <h3 className="font-semibold mb-3">Discount Coupon</h3>
+                    {appliedCoupon ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-success/10 rounded-md">
+                          <div>
+                            <p className="font-medium text-success">{appliedCoupon.code}</p>
+                            {appliedCoupon.description && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {appliedCoupon.description}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveCoupon}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <p className="text-sm text-success">
+                          Coupon applied! You saved {formatCurrency(discount)}
+                        </p>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleApplyCoupon} className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter coupon code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            className="uppercase"
+                          />
+                          <Button
+                            type="submit"
+                            variant="outline"
+                            disabled={applyCouponMutation.isPending}
+                          >
+                            {applyCouponMutation.isPending ? "Applying..." : "Apply"}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
                   </div>
 
                   {/* Trust signals */}

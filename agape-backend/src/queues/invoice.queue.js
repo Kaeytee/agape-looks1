@@ -109,24 +109,24 @@ async function generateInvoicePDF(orderData) {
       
       doc.text(item.metadata.productTitle || 'Product', itemX, y, { width: 240 });
       doc.text(item.quantity.toString(), qtyX, y);
-      doc.text(`₦${item.price_snapshot.toLocaleString()}`, priceX, y);
-      doc.text(`₦${itemTotal.toLocaleString()}`, totalX, y);
+      doc.text(`GH₵${item.price_snapshot.toLocaleString()}`, priceX, y);
+      doc.text(`GH₵${itemTotal.toLocaleString()}`, totalX, y);
       doc.moveDown();
     });
     
     // Totals
     doc.moveDown();
     const totalsX = 380;
-    doc.text(`Subtotal: ₦${orderData.subtotal.toLocaleString()}`, totalsX);
+    doc.text(`Subtotal: GH₵${orderData.subtotal.toLocaleString()}`, totalsX);
     if (orderData.tax > 0) {
-      doc.text(`Tax: ₦${orderData.tax.toLocaleString()}`, totalsX);
+      doc.text(`Tax: GH₵${orderData.tax.toLocaleString()}`, totalsX);
     }
     if (orderData.shipping > 0) {
-      doc.text(`Shipping: ₦${orderData.shipping.toLocaleString()}`, totalsX);
+      doc.text(`Shipping: GH₵${orderData.shipping.toLocaleString()}`, totalsX);
     }
     doc.moveDown(0.5);
     doc.fontSize(12).font('Helvetica-Bold');
-    doc.text(`Total: ₦${orderData.total.toLocaleString()}`, totalsX);
+    doc.text(`Total: GH₵${orderData.total.toLocaleString()}`, totalsX);
     
     // Footer
     doc.moveDown(2);

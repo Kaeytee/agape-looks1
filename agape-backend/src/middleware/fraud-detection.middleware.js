@@ -13,9 +13,9 @@ import { BadRequestError } from '../utils/errors.js';
  * Transaction amount limits
  */
 const LIMITS = {
-  SINGLE_TRANSACTION_MAX: parseInt(process.env.MAX_TRANSACTION_AMOUNT || '5000000', 10), // ₦5M default
-  DAILY_USER_LIMIT: parseInt(process.env.DAILY_USER_LIMIT || '10000000', 10), // ₦10M default
-  HOURLY_USER_LIMIT: parseInt(process.env.HOURLY_USER_LIMIT || '2000000', 10), // ₦2M default
+  SINGLE_TRANSACTION_MAX: parseInt(process.env.MAX_TRANSACTION_AMOUNT || '5000000', 10), // GH₵5M default
+  DAILY_USER_LIMIT: parseInt(process.env.DAILY_USER_LIMIT || '10000000', 10), // GH₵10M default
+  HOURLY_USER_LIMIT: parseInt(process.env.HOURLY_USER_LIMIT || '2000000', 10), // GH₵2M default
 };
 
 /**
@@ -35,7 +35,7 @@ export async function checkTransactionLimits(req, res, next) {
       });
       
       throw new BadRequestError(
-        `Transaction amount exceeds maximum limit of ₦${LIMITS.SINGLE_TRANSACTION_MAX.toLocaleString()}`
+        `Transaction amount exceeds maximum limit of GH₵${LIMITS.SINGLE_TRANSACTION_MAX.toLocaleString()}`
       );
     }
     

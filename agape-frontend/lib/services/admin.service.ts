@@ -14,6 +14,12 @@ export interface DashboardStats {
 	products: {
 		total_products: string | number
 	}
+	coupons: {
+		total_coupons: string | number
+		active_coupons: string | number
+		total_redemptions: string | number
+		total_discount_given: string | number
+	}
 }
 
 export interface SalesTrend {

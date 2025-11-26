@@ -33,3 +33,19 @@ export function formatCurrency(amount: number | string | undefined | null): stri
     maximumFractionDigits: 2,
   })}`
 }
+
+/**
+ * Format date to readable string
+ * @param date - Date string or Date object
+ * @returns Formatted date string
+ */
+export function formatDate(date: string | Date | undefined | null): string {
+  if (!date) return '-'
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(dateObj.getTime())) return '-'
+  return dateObj.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}

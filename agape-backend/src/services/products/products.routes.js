@@ -18,7 +18,7 @@ const createProductSchema = Joi.object({
   slug: Joi.string().required(),
   description: Joi.string().optional().allow('', null),
   price: Joi.number().positive().required(),
-  currency: Joi.string().length(3).default('NGN'),
+  currency: Joi.string().length(3).default('GHS'),
   collectionId: Joi.alternatives().try(uuidSchema, Joi.allow(null)).optional(),
   weight: Joi.number().positive().optional(),
   dimensions: Joi.object().optional(),

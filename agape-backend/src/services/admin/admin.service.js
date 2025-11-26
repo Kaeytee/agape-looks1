@@ -39,10 +39,22 @@ export async function getDashboardStats(filters = {}) {
     'SELECT COUNT(*) as total_products FROM products WHERE is_active = TRUE'
   );
   
+  // Get coupon statistics
+  const couponStats = await query(`
+    SELECT 
+      COUNT(*) as total_coupons,
+      COUNT(*) FILTER (WHERE is_active = true) as active_coupons,
+      COUNT(DISTINCT cu.id) as total_redemptions,
+      COALESCE(SUM(cu.discount_amount), 0) as total_discount_given
+    FROM coupons c
+    LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id
+  `);
+  
   return {
     orders: orderStats.rows[0],
     users: userStats.rows[0],
     products: productStats.rows[0],
+    coupons: couponStats.rows[0],
   };
 }
 
