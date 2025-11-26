@@ -111,12 +111,19 @@ export async function initializePayment(params) {
  * @returns {Promise<Object>} - Verification result with order and payment status
  */
 export async function verifyPayment(reference) {
-  // Check Redis cache first
-  const redis = getRedisClient();
-  const cachedIntent = await redis.get(`payment:${reference}`);
-
-  if (!cachedIntent) {
-    logger.warn('Payment intent not found in cache', { reference });
+  // Check Redis cache first (optional - don't fail if Redis is unavailable)
+  let cachedIntent = null;
+  try {
+    const redis = getRedisClient();
+    cachedIntent = await redis.get(`payment:${reference}`);
+    if (!cachedIntent) {
+      logger.warn('Payment intent not found in cache', { reference });
+    }
+  } catch (redisError) {
+    logger.warn('Redis unavailable during payment verification', {
+      reference,
+      error: redisError.message,
+    });
   }
 
   // Verify with Paystack
@@ -178,8 +185,16 @@ export async function verifyPayment(reference) {
       [payment.order_id]
     );
 
-    // Clear Redis cache
-    await redis.del(`payment:${reference}`);
+    // Clear Redis cache (optional - don't fail if Redis is unavailable)
+    try {
+      const redis = getRedisClient();
+      await redis.del(`payment:${reference}`);
+    } catch (redisError) {
+      logger.warn('Failed to clear payment cache from Redis', {
+        reference,
+        error: redisError.message,
+      });
+    }
 
     // Create audit log
     await client.query(
