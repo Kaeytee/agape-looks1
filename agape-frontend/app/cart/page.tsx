@@ -20,8 +20,36 @@ export default function CartPage() {
   // Fetch products to get full product details
   const { data: productsData } = useProducts({})
   const [couponCode, setCouponCode] = React.useState("")
-  const [appliedCoupon, setAppliedCoupon] = React.useState<any>(null)
+  const [appliedCoupon, setAppliedCoupon] = React.useState<{
+    code: string
+    type: "percentage" | "fixed" | "free_shipping"
+    discount: number
+    freeShipping: boolean
+    description?: string
+  } | null>(null)
   const applyCouponMutation = useApplyCoupon()
+
+  // Load coupon from localStorage on mount
+  React.useEffect(() => {
+    const savedCoupon = localStorage.getItem("agape-looks-coupon")
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon))
+      } catch (error) {
+        console.error("Failed to parse saved coupon:", error)
+        localStorage.removeItem("agape-looks-coupon")
+      }
+    }
+  }, [])
+
+  // Save coupon to localStorage when it changes
+  React.useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem("agape-looks-coupon", JSON.stringify(appliedCoupon))
+    } else {
+      localStorage.removeItem("agape-looks-coupon")
+    }
+  }, [appliedCoupon])
 
   const baseShipping = subtotal >= freeShippingThreshold ? 0 : deliveryFee
   const discount = appliedCoupon?.discount || 0
@@ -41,18 +69,26 @@ export default function CartPage() {
         cartSubtotal: subtotal,
         shippingFee: baseShipping,
       })
-      setAppliedCoupon(result)
-      toast.success(`Coupon "${result.code}" applied successfully!`)
+      const couponData = {
+        code: result.coupon?.code || result.code,
+        type: result.coupon?.type || result.type,
+        discount: result.discount,
+        freeShipping: result.freeShipping,
+        description: result.coupon?.description || result.description,
+      }
+      setAppliedCoupon(couponData)
+      setCouponCode("")
+      toast.success(`Coupon "${couponData.code}" applied successfully!`)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || "Invalid coupon code")
-      setAppliedCoupon(null)
+      const message = error.response?.data?.message || error.message || "Invalid coupon code"
+      toast.error(message)
     }
   }
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null)
     setCouponCode("")
-    toast.success("Coupon removed")
+    toast.info("Coupon removed")
   }
 
   return (

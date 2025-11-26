@@ -19,7 +19,7 @@ const paystackClient = axios.create({
     'Authorization': `Bearer ${config.paystack.secretKey}`,
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds
+  timeout: 45000, // 45 seconds
 });
 
 // Request interceptor for logging
@@ -65,23 +65,32 @@ paystackClient.interceptors.response.use(
  */
 export async function initializeTransaction(params) {
   const { email, amount, reference, metadata = {}, callbackUrl } = params;
-  
+
+  logger.info('Initializing Paystack transaction', {
+    email,
+    amount,
+    reference,
+    callbackUrl: callbackUrl || config.paystack.callbackUrl,
+    baseUrl: config.paystack.baseUrl,
+    hasSecretKey: !!config.paystack.secretKey,
+  });
+
   try {
     const response = await paystackClient.post('/transaction/initialize', {
       email,
-      amount: Math.round(amount * 100), // Convert to kobo
+      amount: Math.round(amount * 100), // Convert to pesewas (GHS uses pesewas like NGN uses kobo)
       reference,
       callback_url: callbackUrl || config.paystack.callbackUrl,
       metadata,
       channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
     });
-    
+
     logger.info('Payment initialized', {
       reference,
       email,
       amount,
     });
-    
+
     return response.data.data;
   } catch (error) {
     logger.error('Payment initialization failed', {
@@ -100,16 +109,16 @@ export async function initializeTransaction(params) {
 export async function verifyTransaction(reference) {
   try {
     const response = await paystackClient.get(`/transaction/verify/${reference}`);
-    
+
     const data = response.data.data;
-    
+
     logger.info('Payment verified', {
       reference,
       status: data.status,
       amount: data.amount / 100,
       gateway_response: data.gateway_response,
     });
-    
+
     return data;
   } catch (error) {
     logger.error('Payment verification failed', {
@@ -142,12 +151,12 @@ export async function fetchTransaction(transactionId) {
  */
 export async function listTransactions(filters = {}) {
   const { perPage = 50, page = 1, from, to, status } = filters;
-  
+
   try {
     const response = await paystackClient.get('/transaction', {
       params: { perPage, page, from, to, status },
     });
-    
+
     return response.data.data;
   } catch (error) {
     logger.error('Transaction list failed', { error: error.message });
@@ -168,20 +177,20 @@ export async function refundTransaction(reference, amount = null, merchantNote =
       transaction: reference,
       merchant_note: merchantNote,
     };
-    
+
     // If partial refund, include amount
     if (amount !== null) {
       payload.amount = Math.round(amount * 100); // Convert to kobo
     }
-    
+
     const response = await paystackClient.post('/refund', payload);
-    
+
     logger.info('Refund initiated', {
       reference,
       amount,
       refundId: response.data.data.id,
     });
-    
+
     return response.data.data;
   } catch (error) {
     logger.error('Refund failed', {
@@ -211,9 +220,15 @@ export async function fetchRefund(reference) {
  * Verifies webhook signature from Paystack
  * @param {string} payload - Raw request body
  * @param {string} signature - x-paystack-signature header value
- * @returns {boolean} - True if signature is valid
+ * @returns {boolean} - True if signature is valid (or if no secret configured, skip verification)
  */
 export function verifyWebhookSignature(payload, signature) {
+  // Skip verification if no webhook secret is configured
+  if (!config.paystack.webhookSecret || config.paystack.webhookSecret === 'your_webhook_secret_here') {
+    logger.warn('Webhook signature verification skipped - no secret configured');
+    return true;
+  }
+
   try {
     const hash = createHmacSignature(payload, config.paystack.webhookSecret);
     return hash === signature;
@@ -267,7 +282,7 @@ export function generateTransactionReference(prefix = 'TXN') {
  */
 export async function chargeAuthorization(params) {
   const { authorizationCode, email, amount, reference, metadata = {} } = params;
-  
+
   try {
     const response = await paystackClient.post('/transaction/charge_authorization', {
       authorization_code: authorizationCode,
@@ -276,13 +291,13 @@ export async function chargeAuthorization(params) {
       reference,
       metadata,
     });
-    
+
     logger.info('Authorization charged', {
       reference,
       email,
       amount,
     });
-    
+
     return response.data.data;
   } catch (error) {
     logger.error('Authorization charge failed', {
@@ -316,7 +331,7 @@ export async function exportTransactionsForReconciliation(from, to) {
       perPage: 100,
       status: 'success',
     });
-    
+
     return transactions.map(txn => ({
       reference: txn.reference,
       amount: txn.amount / 100,

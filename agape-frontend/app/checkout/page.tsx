@@ -3,52 +3,78 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, CreditCard, Smartphone, Lock, Ticket, X, Loader2 } from "lucide-react"
+import { ArrowLeft, Lock, Ticket, X, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCart } from "@/lib/cart-context"
 import { useProducts } from "@/lib/hooks/useProducts"
 import { useApplyCoupon } from "@/lib/hooks/useCoupons"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { formatCurrency } from "@/lib/utils"
 import { toast } from "sonner"
-import type { ShippingAddress } from "@/lib/types"
+import api from "@/lib/api/client"
 
-
-
-const paymentMethods = [
-  { id: "card", name: "Credit/Debit Card", icon: CreditCard, description: "Visa, Mastercard" },
+// Ghana's 16 Regions
+const GHANA_REGIONS = [
+  "Ahafo",
+  "Ashanti",
+  "Bono",
+  "Bono East",
+  "Central",
+  "Eastern",
+  "Greater Accra",
+  "North East",
+  "Northern",
+  "Oti",
+  "Savannah",
+  "Upper East",
+  "Upper West",
+  "Volta",
+  "Western",
+  "Western North",
 ]
+
+
+
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const { items, clearCart, subtotal, deliveryFee, freeShippingThreshold } = useCart()
   const { data: productsData } = useProducts({})
-  const [currentStep, setCurrentStep] = React.useState<"shipping" | "payment" | "review">("shipping")
   const [isProcessing, setIsProcessing] = React.useState(false)
-  const [selectedShippingMethod, setSelectedShippingMethod] = React.useState("standard")
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState("momo")
+  const [isMounted, setIsMounted] = React.useState(false)
 
-  const [shippingInfo, setShippingInfo] = React.useState<ShippingAddress>({
+  // Handle hydration mismatch
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const [shippingInfo, setShippingInfo] = React.useState({
     firstName: "",
-    lastName: "",
     email: "",
     phone: "",
-    addressLine1: "",
-    addressLine2: "",
+    address: "",
     city: "",
     region: "",
-    postalCode: "",
-    country: "Ghana",
     notes: "",
   })
 
-  const [selectedShipping, setSelectedShipping] = React.useState("standard")
-  const [selectedPayment, setSelectedPayment] = React.useState("momo")
+  // Pre-fill user data
+  React.useEffect(() => {
+    if (user) {
+      setShippingInfo(prev => ({
+        ...prev,
+        firstName: user.firstName || user.name?.split(' ')[0] || prev.firstName,
+        email: user.email || prev.email,
+      }))
+    }
+  }, [user])
 
   // Coupon state
   const [couponCode, setCouponCode] = React.useState("")
@@ -57,8 +83,31 @@ export default function CheckoutPage() {
     type: "percentage" | "fixed" | "free_shipping"
     discount: number
     freeShipping: boolean
+    description?: string
   } | null>(null)
   const applyCouponMutation = useApplyCoupon()
+
+  // Load coupon from localStorage on mount
+  React.useEffect(() => {
+    const savedCoupon = localStorage.getItem("agape-looks-coupon")
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon))
+      } catch (error) {
+        console.error("Failed to parse saved coupon:", error)
+        localStorage.removeItem("agape-looks-coupon")
+      }
+    }
+  }, [])
+
+  // Save coupon to localStorage when it changes
+  React.useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem("agape-looks-coupon", JSON.stringify(appliedCoupon))
+    } else {
+      localStorage.removeItem("agape-looks-coupon")
+    }
+  }, [appliedCoupon])
 
   // Coupon handlers
   const handleApplyCoupon = async (e: React.FormEvent) => {
@@ -68,19 +117,23 @@ export default function CheckoutPage() {
     try {
       const result = await applyCouponMutation.mutateAsync({
         code: couponCode.trim(),
-        orderTotal: subtotal,
+        cartSubtotal: subtotal,
+        shippingFee: deliveryFee,
       })
 
-      setAppliedCoupon({
-        code: result.coupon.code,
-        type: result.coupon.type,
+      const couponData = {
+        code: result.coupon?.code || result.code,
+        type: result.coupon?.type || result.type,
         discount: result.discount,
         freeShipping: result.freeShipping,
-      })
+        description: result.coupon?.description || result.description,
+      }
+      setAppliedCoupon(couponData)
       setCouponCode("")
-      toast.success(`Coupon "${result.coupon.code}" applied successfully!`)
+      toast.success(`Coupon "${couponData.code}" applied successfully!`)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Invalid coupon code")
+      const message = error.response?.data?.message || error.message || "Invalid coupon code"
+      toast.error(message)
     }
   }
 
@@ -89,19 +142,8 @@ export default function CheckoutPage() {
     toast.info("Coupon removed")
   }
 
-  // Dynamic shipping methods based on settings and coupon
-  const shippingMethods = React.useMemo(() => [
-    {
-      id: "standard",
-      name: "Standard Shipping",
-      time: "5-7 business days",
-      price: appliedCoupon?.freeShipping ? 0 : (subtotal > freeShippingThreshold ? 0 : deliveryFee)
-    },
-    { id: "express", name: "Express Shipping", time: "2-3 business days", price: appliedCoupon?.freeShipping ? 0 : 100 },
-    { id: "overnight", name: "Overnight Shipping", time: "1 business day", price: appliedCoupon?.freeShipping ? 0 : 200 },
-  ], [subtotal, freeShippingThreshold, deliveryFee, appliedCoupon])
-
-  const shippingCost = shippingMethods.find((m) => m.id === selectedShipping)?.price || 0
+  // Calculate shipping cost
+  const shippingCost = appliedCoupon?.freeShipping ? 0 : (subtotal > freeShippingThreshold ? 0 : deliveryFee)
   const discount = appliedCoupon?.discount || 0
   const total = subtotal - discount + shippingCost
 
@@ -111,29 +153,154 @@ export default function CheckoutPage() {
     }
   }, [items, router])
 
-  const handleShippingSubmit = (e: React.FormEvent) => {
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
-    setCurrentStep("payment")
-  }
 
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault()
+    if (!shippingInfo.firstName || !shippingInfo.email || !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city || !shippingInfo.region) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    // Check if user is authenticated
+    if (!user) {
+      toast.error("Please log in to complete your purchase")
+      router.push(`/auth/login?redirect=/checkout`)
+      return
+    }
+
+    // Check if token exists
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (!token) {
+      toast.error("Your session has expired. Please log in again.")
+      router.push(`/auth/login?redirect=/checkout`)
+      return
+    }
+
     setIsProcessing(true)
 
     try {
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // 1. Create order - match backend schema exactly
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.productId,
+          variantId: item.variantId || undefined,
+          quantity: item.quantity,
+        })),
+        shippingAddress: {
+          fullName: shippingInfo.firstName,
+          phone: shippingInfo.phone,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.region,
+          country: "Ghana",
+        },
+        couponCode: appliedCoupon?.code || undefined,
+        metadata: {
+          email: shippingInfo.email,
+          notes: shippingInfo.notes || "",
+        },
+      }
 
-      // Generate order number
-      const orderNumber = `AGW-${Date.now().toString().slice(-8)}`
+      console.log('[Checkout] Creating order...', { itemCount: items.length, total })
+      toast.loading("Creating order...", { id: "checkout" })
 
-      // Clear cart and redirect to success page
+      const orderResponse = await api.post("/orders", orderData)
+
+      // Extract order object from response
+      // Backend returns {status: 'success', data: {id: ..., order_number: ...}}
+      const responseData = orderResponse.data.data || orderResponse.data
+      const order = responseData.order || responseData
+
+      // Get the order ID
+      const orderId = order.id
+
+      if (!orderId) {
+        console.error('[Checkout] No orderId in response:', orderResponse.data)
+        throw new Error("Failed to create order - no order ID returned")
+      }
+
+      console.log('[Checkout] Order created successfully', {
+        orderId,
+        orderNumber: order.order_number || order.orderNumber
+      })
+
+      // 2. Initialize Paystack payment
+      console.log('[Checkout] Initializing payment...', { orderId, amount: total })
+      toast.loading("Initializing payment...", { id: "checkout" })
+
+      const paymentResponse = await api.post("/payments/initialize", {
+        orderId: orderId,
+        amount: total,
+      })
+
+      const paymentData = paymentResponse.data.data || paymentResponse.data
+
+      console.log('[Checkout] Payment initialized', {
+        paymentId: paymentData.paymentId,
+        reference: paymentData.reference,
+        hasAuthUrl: !!paymentData.authorizationUrl
+      })
+
+      // 3. Clear cart and coupon before redirecting
       clearCart()
-      router.push(`/checkout/success?order=${orderNumber}`)
-    } catch (error) {
-      console.error("Payment processing failed:", error)
+      localStorage.removeItem("agape-looks-coupon")
+
+      toast.success("Redirecting to payment...", { id: "checkout" })
+
+      // 4. Redirect to Paystack
+      if (paymentData.authorizationUrl) {
+        console.log('[Checkout] Redirecting to Paystack...')
+        window.location.href = paymentData.authorizationUrl
+      } else {
+        throw new Error("No payment URL received")
+      }
+    } catch (error: any) {
+      console.error("[Checkout] Payment failed:", error)
+
+      // Handle specific error types
+      let message = "Checkout failed. Please try again."
+
+      if (error.response?.status === 401) {
+        message = "Your session has expired. Please log in again."
+        toast.error(message, { id: "checkout" })
+        setTimeout(() => {
+          router.push(`/auth/login?redirect=/checkout`)
+        }, 1500)
+        return
+      } else if (error.response?.status === 403) {
+        message = "You don't have permission to complete this action."
+      } else if (error.response?.status === 408 || error.code === 'ECONNABORTED') {
+        message = "Request timed out. Please check your connection and try again."
+      } else if (error.response?.status === 500) {
+        message = "Server error. Please try again in a few moments."
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message
+      } else if (error.message) {
+        message = error.message
+      }
+
+      console.log('[Checkout] Error details:', {
+        status: error.response?.status,
+        message: message,
+        data: error.response?.data
+      })
+
+      toast.error(message, { id: "checkout" })
       setIsProcessing(false)
     }
+  }
+
+
+  // Show loading state until mounted to prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className="flex min-h-screen flex-col bg-muted/30">
+        <SiteHeader />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+      </div>
+    )
   }
 
   if (items.length === 0) {
@@ -155,228 +322,157 @@ export default function CheckoutPage() {
 
           <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">Checkout</h1>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center mb-8 gap-2">
-            {["shipping", "payment", "review"].map((step, index) => (
-              <React.Fragment key={step}>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === step
-                      ? "bg-primary text-primary-foreground"
-                      : index < ["shipping", "payment", "review"].indexOf(currentStep)
-                        ? "bg-success text-success-foreground"
-                        : "bg-muted text-muted-foreground"
-                      }`}
-                  >
-                    {index + 1}
-                  </div>
-                  <span className="hidden sm:inline text-sm font-medium capitalize">{step}</span>
-                </div>
-                {index < 2 && (
-                  <div
-                    className={`w-12 h-0.5 ${index < ["shipping", "payment", "review"].indexOf(currentStep) ? "bg-success" : "bg-muted"
-                      }`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+          {/* Authentication Warning */}
+          {!user && (
+            <div className="mb-6 p-4 bg-warning/10 border border-warning/20 rounded-md flex items-start gap-3">
+              <Lock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-warning mb-1">Login Required</p>
+                <p className="text-muted-foreground">
+                  Please{" "}
+                  <Link href="/auth/login?redirect=/checkout" className="underline hover:text-foreground">
+                    log in
+                  </Link>
+                  {" "}to complete your purchase.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Shipping Information */}
-              {currentStep === "shipping" && (
-                <form onSubmit={handleShippingSubmit} className="space-y-6">
-                  <div className="bg-card border border-border rounded-(--radius-md) p-6">
-                    <h2 className="font-display text-xl font-semibold mb-4">Shipping Information</h2>
+              {/* Delivery Information */}
+              <form onSubmit={handleCheckout} className="space-y-6">
+                <div className="bg-card border border-border rounded-(--radius-md) p-6">
+                  <h2 className="font-display text-xl font-semibold mb-4">Delivery Information</h2>
 
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name *</Label>
-                        <Input
-                          id="firstName"
-                          required
-                          value={shippingInfo.firstName}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, firstName: e.target.value })}
-                        />
-                      </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Name *</Label>
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        autoComplete="name"
+                        required
+                        value={shippingInfo.firstName}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, firstName: e.target.value })}
+                        placeholder="Your name"
+                      />
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name *</Label>
-                        <Input
-                          id="lastName"
-                          required
-                          value={shippingInfo.lastName}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, lastName: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={shippingInfo.email}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
+                        placeholder="your@email.com"
+                      />
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          required
-                          value={shippingInfo.email}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        required
+                        placeholder="+233 XX XXX XXXX"
+                        value={shippingInfo.phone}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                      />
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number *</Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          required
-                          placeholder="+233 XX XXX XXXX"
-                          value={shippingInfo.phone}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="address">Delivery Address *</Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        autoComplete="street-address"
+                        required
+                        placeholder="Street address, house number, landmark"
+                        value={shippingInfo.address}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+                      />
+                    </div>
 
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="addressLine1">Address Line 1 *</Label>
-                        <Input
-                          id="addressLine1"
-                          required
-                          value={shippingInfo.addressLine1}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, addressLine1: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City/Town *</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        autoComplete="address-level2"
+                        required
+                        placeholder="e.g. Accra, Kumasi"
+                        value={shippingInfo.city}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+                      />
+                    </div>
 
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="addressLine2">Address Line 2</Label>
-                        <Input
-                          id="addressLine2"
-                          value={shippingInfo.addressLine2}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, addressLine2: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="region">Region *</Label>
+                      <Select
+                        value={shippingInfo.region}
+                        onValueChange={(value) => setShippingInfo({ ...shippingInfo, region: value })}
+                      >
+                        <SelectTrigger id="region">
+                          <SelectValue placeholder="Select region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GHANA_REGIONS.map((region) => (
+                            <SelectItem key={region} value={region}>
+                              {region}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="city">City *</Label>
-                        <Input
-                          id="city"
-                          required
-                          value={shippingInfo.city}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="region">Region *</Label>
-                        <Input
-                          id="region"
-                          required
-                          value={shippingInfo.region}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, region: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="notes">Delivery Notes (Optional)</Label>
-                        <Textarea
-                          id="notes"
-                          placeholder="Any special instructions for delivery..."
-                          value={shippingInfo.notes}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, notes: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="notes">Delivery Notes (Optional)</Label>
+                      <Textarea
+                        id="notes"
+                        name="notes"
+                        autoComplete="off"
+                        placeholder="Any special instructions for delivery..."
+                        value={shippingInfo.notes}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, notes: e.target.value })}
+                      />
                     </div>
                   </div>
+                </div>
 
-                  {/* Shipping Method */}
-                  <div className="bg-card border border-border rounded-(--radius-md) p-6">
-                    <h2 className="font-display text-xl font-semibold mb-4">Shipping Method</h2>
-
-                    <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping}>
-                      <div className="space-y-3">
-                        {shippingMethods.map((method) => (
-                          <div
-                            key={method.id}
-                            className="flex items-center space-x-3 border border-border rounded-md p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                          >
-                            <RadioGroupItem value={method.id} id={method.id} />
-                            <Label htmlFor={method.id} className="flex-1 cursor-pointer">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className="font-medium">{method.name}</p>
-                                  <p className="text-sm text-muted-foreground">{method.time}</p>
-                                </div>
-                                <p className="font-semibold">
-                                  {method.price === 0 ? "Free" : formatCurrency(method.price)}
-                                </p>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </RadioGroup>
+                {/* Secure Payment Notice */}
+                <div className="p-4 bg-muted/50 rounded-md flex items-start gap-3">
+                  <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">Secure Payment via Paystack</p>
+                    <p>You'll be redirected to Paystack to complete your payment securely.</p>
                   </div>
+                </div>
 
-                  <Button type="submit" size="lg" className="w-full">
-                    Continue to Payment
-                  </Button>
-                </form>
-              )}
-
-              {/* Payment Method */}
-              {currentStep === "payment" && (
-                <form onSubmit={handlePlaceOrder} className="space-y-6">
-                  <div className="bg-card border border-border rounded-(--radius-md) p-6">
-                    <h2 className="font-display text-xl font-semibold mb-4">Payment Method</h2>
-
-                    <RadioGroup value={selectedPayment} onValueChange={setSelectedPayment}>
-                      <div className="space-y-3">
-                        {paymentMethods.map((method) => {
-                          const Icon = method.icon
-                          return (
-                            <div
-                              key={method.id}
-                              className="flex items-center space-x-3 border border-border rounded-md p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                            >
-                              <RadioGroupItem value={method.id} id={method.id} />
-                              <Label htmlFor={method.id} className="flex-1 cursor-pointer">
-                                <div className="flex items-center gap-3">
-                                  <Icon className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="font-medium">{method.name}</p>
-                                    <p className="text-sm text-muted-foreground">{method.description}</p>
-                                  </div>
-                                </div>
-                              </Label>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </RadioGroup>
-
-                    <div className="mt-6 p-4 bg-muted/50 rounded-md flex items-start gap-3">
-                      <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-muted-foreground">
-                        <p className="font-medium text-foreground mb-1">Secure Payment</p>
-                        <p>Your payment information is encrypted and secure. We never store your card details.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      className="flex-1 bg-transparent"
-                      onClick={() => setCurrentStep("shipping")}
-                    >
-                      Back
-                    </Button>
-                    <Button type="submit" size="lg" className="flex-1" disabled={isProcessing}>
-                      {isProcessing ? "Processing..." : "Place Order"}
-                    </Button>
-                  </div>
-                </form>
-              )}
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={!shippingInfo.region || isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    `Pay ${formatCurrency(total)}`
+                  )}
+                </Button>
+              </form>
             </div>
 
             {/* Order Summary Sidebar */}
@@ -445,6 +541,8 @@ export default function CheckoutPage() {
                       <div className="flex gap-2">
                         <Input
                           id="coupon"
+                          name="coupon"
+                          autoComplete="off"
                           placeholder="Enter code"
                           value={couponCode}
                           onChange={(e) => setCouponCode(e.target.value.toUpperCase())}

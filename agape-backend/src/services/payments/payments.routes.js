@@ -30,8 +30,9 @@ const listQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 });
 
-// Public webhook endpoint (no auth required)
+// Public endpoints (no auth required)
 router.post('/webhook', paymentsController.handleWebhook);
+router.get('/callback', paymentsController.handleCallback);
 
 // Protected routes
 router.post('/initialize', authenticate, validateBody(initializeSchema), paymentsController.initializePayment);

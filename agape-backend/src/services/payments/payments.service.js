@@ -19,10 +19,10 @@ import { PaymentError, NotFoundError, ValidationError } from '../../utils/errors
  */
 export async function initializePayment(params) {
   const { orderId, userId, email, amount, metadata = {} } = params;
-  
+
   // Generate unique payment reference
   const reference = paystackClient.generateTransactionReference(orderId);
-  
+
   return await transaction(async (client) => {
     // Create payment record
     const paymentResult = await client.query(
@@ -31,23 +31,41 @@ export async function initializePayment(params) {
        RETURNING id, gateway_ref, amount, currency, status, created_at`,
       [uuidv4(), orderId, reference, amount, config.payment.currency]
     );
-    
+
     const payment = paymentResult.rows[0];
-    
+
     // Store payment intent in Redis with 20 minute TTL
-    const redis = getRedisClient();
-    await redis.setex(
-      `payment:${reference}`,
-      1200, // 20 minutes
-      JSON.stringify({
-        paymentId: payment.id,
-        orderId,
-        userId,
-        amount,
-        createdAt: new Date().toISOString(),
-      })
-    );
-    
+    try {
+      const redis = getRedisClient();
+
+      // Add timeout wrapper for Redis operation
+      const redisTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Redis operation timed out')), 5000)
+      );
+
+      const redisOperation = redis.setex(
+        `payment:${reference}`,
+        1200, // 20 minutes
+        JSON.stringify({
+          paymentId: payment.id,
+          orderId,
+          userId,
+          amount,
+          createdAt: new Date().toISOString(),
+        })
+      );
+
+      await Promise.race([redisOperation, redisTimeout]);
+
+      logger.debug('Payment intent stored in Redis', { reference, paymentId: payment.id });
+    } catch (redisError) {
+      // Log Redis error but don't fail the payment - it's just a cache
+      logger.warn('Failed to cache payment intent in Redis', {
+        reference,
+        error: redisError.message,
+      });
+    }
+
     // Initialize transaction with Paystack
     const paystackResponse = await paystackClient.initializeTransaction({
       email,
@@ -61,13 +79,13 @@ export async function initializePayment(params) {
       },
       callbackUrl: `${config.paystack.callbackUrl}?reference=${reference}`,
     });
-    
+
     // Update payment with Paystack response
     await client.query(
       `UPDATE payments SET raw_response = $1 WHERE id = $2`,
       [JSON.stringify(paystackResponse), payment.id]
     );
-    
+
     logger.info('Payment initialized', {
       paymentId: payment.id,
       orderId,
@@ -75,7 +93,7 @@ export async function initializePayment(params) {
       amount,
       authUrl: paystackResponse.authorization_url,
     });
-    
+
     return {
       paymentId: payment.id,
       reference,
@@ -96,32 +114,32 @@ export async function verifyPayment(reference) {
   // Check Redis cache first
   const redis = getRedisClient();
   const cachedIntent = await redis.get(`payment:${reference}`);
-  
+
   if (!cachedIntent) {
     logger.warn('Payment intent not found in cache', { reference });
   }
-  
+
   // Verify with Paystack
   const paystackTransaction = await paystackClient.verifyTransaction(reference);
-  
+
   // Check if transaction is successful
   if (!paystackClient.isTransactionSuccessful(paystackTransaction)) {
     throw new PaymentError(`Payment verification failed: ${paystackTransaction.gateway_response}`);
   }
-  
+
   return await transaction(async (client) => {
     // Get payment record
     const paymentResult = await client.query(
       'SELECT id, order_id, status, amount FROM payments WHERE gateway_ref = $1',
       [reference]
     );
-    
+
     if (paymentResult.rows.length === 0) {
       throw new NotFoundError('Payment');
     }
-    
+
     const payment = paymentResult.rows[0];
-    
+
     // Prevent double processing (idempotency)
     if (payment.status === 'paid' || payment.status === 'success') {
       logger.warn('Payment already processed', { reference, paymentId: payment.id });
@@ -132,7 +150,7 @@ export async function verifyPayment(reference) {
         message: 'Payment has already been verified',
       };
     }
-    
+
     // Verify amount matches
     const expectedAmount = Math.round(payment.amount * 100); // Convert to kobo
     if (paystackTransaction.amount !== expectedAmount) {
@@ -143,7 +161,7 @@ export async function verifyPayment(reference) {
       });
       throw new PaymentError('Payment amount mismatch');
     }
-    
+
     // Update payment status
     await client.query(
       `UPDATE payments 
@@ -153,16 +171,16 @@ export async function verifyPayment(reference) {
        WHERE id = $2`,
       [JSON.stringify(paystackTransaction), payment.id]
     );
-    
+
     // Update order status
     await client.query(
       `UPDATE orders SET status = 'paid', updated_at = NOW() WHERE id = $1`,
       [payment.order_id]
     );
-    
+
     // Clear Redis cache
     await redis.del(`payment:${reference}`);
-    
+
     // Create audit log
     await client.query(
       `INSERT INTO audit_logs (actor_id, action, entity, entity_id, changes)
@@ -177,16 +195,16 @@ export async function verifyPayment(reference) {
         }),
       ]
     );
-    
+
     logger.info('Payment verified and order updated', {
       paymentId: payment.id,
       orderId: payment.order_id,
       reference,
       amount: paystackTransaction.amount / 100,
     });
-    
+
     // TODO: Enqueue post-payment jobs (invoice generation, notifications)
-    
+
     return {
       paymentId: payment.id,
       orderId: payment.order_id,
@@ -206,25 +224,25 @@ export async function verifyPayment(reference) {
 export async function processWebhook(event, signature) {
   // Verify webhook signature
   const isValid = paystackClient.verifyWebhookSignature(JSON.stringify(event), signature);
-  
+
   if (!isValid) {
     logger.error('Invalid webhook signature', { event: event.event });
     throw new ValidationError('Invalid webhook signature');
   }
-  
+
   // Check for duplicate webhook events (idempotency)
   const eventId = `${event.event}_${event.data.reference}_${event.data.id}`;
-  
+
   const existingEvent = await query(
     'SELECT id FROM webhook_events WHERE event_id = $1',
     [eventId]
   );
-  
+
   if (existingEvent.rows.length > 0) {
     logger.warn('Duplicate webhook event', { eventId });
     return { status: 'duplicate', eventId };
   }
-  
+
   return await transaction(async (client) => {
     // Store webhook event
     const webhookResult = await client.query(
@@ -233,46 +251,46 @@ export async function processWebhook(event, signature) {
        RETURNING id`,
       [uuidv4(), eventId, event.event, JSON.stringify(event)]
     );
-    
+
     const webhookId = webhookResult.rows[0].id;
-    
+
     try {
       // Parse event data
       const parsedEvent = paystackClient.parseWebhookEvent(event);
-      
+
       // Handle different event types
       let result;
       switch (event.event) {
         case 'charge.success':
           result = await handleChargeSuccess(client, parsedEvent);
           break;
-        
+
         case 'charge.failed':
           result = await handleChargeFailed(client, parsedEvent);
           break;
-        
+
         case 'transfer.success':
         case 'transfer.failed':
           result = await handleTransferEvent(client, parsedEvent);
           break;
-        
+
         default:
           logger.info('Unhandled webhook event type', { eventType: event.event });
           result = { handled: false };
       }
-      
+
       // Mark webhook as processed
       await client.query(
         `UPDATE webhook_events SET status = 'processed', processed_at = NOW() WHERE id = $1`,
         [webhookId]
       );
-      
+
       logger.info('Webhook processed successfully', {
         webhookId,
         eventType: event.event,
         reference: parsedEvent.data.reference,
       });
-      
+
       return {
         status: 'success',
         webhookId,
@@ -288,13 +306,13 @@ export async function processWebhook(event, signature) {
          WHERE id = $2`,
         [error.message, webhookId]
       );
-      
+
       logger.error('Webhook processing failed', {
         webhookId,
         error: error.message,
         stack: error.stack,
       });
-      
+
       throw error;
     }
   });
@@ -305,7 +323,7 @@ export async function processWebhook(event, signature) {
  */
 async function handleChargeSuccess(client, event) {
   const { reference, amount, status } = event.data;
-  
+
   // Update payment if not already processed
   const result = await client.query(
     `UPDATE payments 
@@ -314,19 +332,19 @@ async function handleChargeSuccess(client, event) {
      RETURNING id, order_id`,
     [reference]
   );
-  
+
   if (result.rows.length > 0) {
     const payment = result.rows[0];
-    
+
     // Update order status
     await client.query(
       `UPDATE orders SET status = 'paid', updated_at = NOW() WHERE id = $1`,
       [payment.order_id]
     );
-    
+
     return { paymentId: payment.id, orderId: payment.order_id };
   }
-  
+
   return { alreadyProcessed: true };
 }
 
@@ -335,7 +353,7 @@ async function handleChargeSuccess(client, event) {
  */
 async function handleChargeFailed(client, event) {
   const { reference, gatewayResponse } = event.data;
-  
+
   const result = await client.query(
     `UPDATE payments 
      SET status = 'failed'
@@ -343,19 +361,19 @@ async function handleChargeFailed(client, event) {
      RETURNING id, order_id`,
     [reference]
   );
-  
+
   if (result.rows.length > 0) {
     const payment = result.rows[0];
-    
+
     // Update order status
     await client.query(
       `UPDATE orders SET status = 'payment_failed', updated_at = NOW() WHERE id = $1`,
       [payment.order_id]
     );
-    
+
     return { paymentId: payment.id, orderId: payment.order_id };
   }
-  
+
   return { notFound: true };
 }
 
@@ -383,26 +401,26 @@ export async function initiateRefund(paymentId, amount = null, reason = '', admi
        FROM payments WHERE id = $1`,
       [paymentId]
     );
-    
+
     if (paymentResult.rows.length === 0) {
       throw new NotFoundError('Payment');
     }
-    
+
     const payment = paymentResult.rows[0];
-    
+
     if (payment.status !== 'paid') {
       throw new PaymentError('Only paid payments can be refunded');
     }
-    
+
     const refundAmount = amount || payment.amount;
-    
+
     // Initiate refund with Paystack
     const paystackRefund = await paystackClient.refundTransaction(
       payment.gateway_ref,
       refundAmount,
       reason
     );
-    
+
     // Create refund record
     const refundResult = await client.query(
       `INSERT INTO refunds (id, payment_id, order_id, amount, gateway_ref, status, reason)
@@ -410,30 +428,30 @@ export async function initiateRefund(paymentId, amount = null, reason = '', admi
        RETURNING id, amount, status, created_at`,
       [uuidv4(), payment.id, payment.order_id, refundAmount, paystackRefund.id, reason]
     );
-    
+
     const refund = refundResult.rows[0];
-    
+
     // Update order status
     const newOrderStatus = refundAmount === payment.amount ? 'refunded' : 'partially_refunded';
     await client.query(
       `UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2`,
       [newOrderStatus, payment.order_id]
     );
-    
+
     // Create audit log
     await client.query(
       `INSERT INTO audit_logs (actor_id, actor_role, action, entity, entity_id, changes)
        VALUES ($1, 'admin', 'refund_initiated', 'payment', $2, $3)`,
       [adminId, payment.id, JSON.stringify({ amount: refundAmount, reason })]
     );
-    
+
     logger.info('Refund initiated', {
       refundId: refund.id,
       paymentId: payment.id,
       orderId: payment.order_id,
       amount: refundAmount,
     });
-    
+
     return {
       refundId: refund.id,
       paymentId: payment.id,
@@ -455,11 +473,11 @@ export async function getPayment(paymentId) {
      WHERE p.id = $1`,
     [paymentId]
   );
-  
+
   if (result.rows.length === 0) {
     throw new NotFoundError('Payment');
   }
-  
+
   return result.rows[0];
 }
 
@@ -469,26 +487,26 @@ export async function getPayment(paymentId) {
 export async function listPayments(filters = {}) {
   const { userId, status, page = 1, limit = 20 } = filters;
   const offset = (page - 1) * limit;
-  
+
   let whereClause = '';
   const params = [];
   let paramIndex = 1;
-  
+
   if (userId) {
     whereClause += ` WHERE o.user_id = $${paramIndex}`;
     params.push(userId);
     paramIndex++;
   }
-  
+
   if (status) {
     whereClause += whereClause ? ' AND' : ' WHERE';
     whereClause += ` p.status = $${paramIndex}`;
     params.push(status);
     paramIndex++;
   }
-  
+
   params.push(limit, offset);
-  
+
   const result = await query(
     `SELECT p.*, o.order_number, o.total
      FROM payments p
@@ -498,7 +516,7 @@ export async function listPayments(filters = {}) {
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     params
   );
-  
+
   return result.rows;
 }
 
