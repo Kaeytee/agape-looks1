@@ -22,6 +22,11 @@ export function rateLimit(options = {}) {
       return next();
     }
 
+    // Skip rate limiting for health checks and root path
+    if (req.path === '/healthz' || req.path === '/' || req.path === '/health') {
+      return next();
+    }
+
     try {
       const redis = getRedisClient();
       const identifier = options.keyGenerator
