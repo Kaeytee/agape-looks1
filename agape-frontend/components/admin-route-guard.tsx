@@ -24,10 +24,15 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   React.useEffect(() => {
     // Only check when auth loading is complete
-    if (!isLoading) {
+    if (!isLoading && isMounted) {
       if (!user) {
         // No user, redirect to login
         router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
@@ -36,10 +41,10 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
         router.push("/")
       }
     }
-  }, [user, isLoading, router, pathname])
+  }, [user, isLoading, router, pathname, isMounted])
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading state while checking authentication or if not mounted yet (to prevent hydration mismatch)
+  if (!isMounted || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
