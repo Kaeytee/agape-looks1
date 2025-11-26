@@ -194,7 +194,7 @@ export function CouponForm({ initialData, onSubmit, isLoading, isEdit }: CouponF
                   <FormControl>
                     <div className="relative">
                       {type === "fixed" && (
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                           GH₵
                         </span>
                       )}
@@ -205,7 +205,7 @@ export function CouponForm({ initialData, onSubmit, isLoading, isEdit }: CouponF
                         step={type === "percentage" ? "1" : "0.01"}
                         max={type === "percentage" ? "100" : undefined}
                         placeholder={type === "percentage" ? "10" : type === "fixed" ? "5000" : "0"}
-                        className={type === "fixed" ? "pl-8" : ""}
+                        className={type === "fixed" ? "pl-12" : ""}
                         disabled={isEdit && type === "free_shipping"}
                       />
                       {type === "percentage" && (
@@ -233,7 +233,7 @@ export function CouponForm({ initialData, onSubmit, isLoading, isEdit }: CouponF
                   <FormLabel>Minimum Order Amount</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                         GH₵
                       </span>
                       <Input
@@ -242,7 +242,7 @@ export function CouponForm({ initialData, onSubmit, isLoading, isEdit }: CouponF
                         min="0"
                         step="0.01"
                         placeholder="0"
-                        className="pl-8"
+                        className="pl-12"
                       />
                     </div>
                   </FormControl>

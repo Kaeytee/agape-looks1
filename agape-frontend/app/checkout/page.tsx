@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, CreditCard, Smartphone, Lock } from "lucide-react"
+import { ArrowLeft, CreditCard, Smartphone, Lock, Ticket, X, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { useCart } from "@/lib/cart-context"
 import { useProducts } from "@/lib/hooks/useProducts"
+import { useApplyCoupon } from "@/lib/hooks/useCoupons"
 import { formatCurrency } from "@/lib/utils"
+import { toast } from "sonner"
 import type { ShippingAddress } from "@/lib/types"
 
 
@@ -48,20 +50,60 @@ export default function CheckoutPage() {
   const [selectedShipping, setSelectedShipping] = React.useState("standard")
   const [selectedPayment, setSelectedPayment] = React.useState("momo")
 
-  // Dynamic shipping methods based on settings
+  // Coupon state
+  const [couponCode, setCouponCode] = React.useState("")
+  const [appliedCoupon, setAppliedCoupon] = React.useState<{
+    code: string
+    type: "percentage" | "fixed" | "free_shipping"
+    discount: number
+    freeShipping: boolean
+  } | null>(null)
+  const applyCouponMutation = useApplyCoupon()
+
+  // Coupon handlers
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!couponCode.trim()) return
+
+    try {
+      const result = await applyCouponMutation.mutateAsync({
+        code: couponCode.trim(),
+        orderTotal: subtotal,
+      })
+
+      setAppliedCoupon({
+        code: result.coupon.code,
+        type: result.coupon.type,
+        discount: result.discount,
+        freeShipping: result.freeShipping,
+      })
+      setCouponCode("")
+      toast.success(`Coupon "${result.coupon.code}" applied successfully!`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid coupon code")
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    toast.info("Coupon removed")
+  }
+
+  // Dynamic shipping methods based on settings and coupon
   const shippingMethods = React.useMemo(() => [
     {
       id: "standard",
       name: "Standard Shipping",
       time: "5-7 business days",
-      price: subtotal > freeShippingThreshold ? 0 : deliveryFee
+      price: appliedCoupon?.freeShipping ? 0 : (subtotal > freeShippingThreshold ? 0 : deliveryFee)
     },
-    { id: "express", name: "Express Shipping", time: "2-3 business days", price: 100 },
-    { id: "overnight", name: "Overnight Shipping", time: "1 business day", price: 200 },
-  ], [subtotal, freeShippingThreshold, deliveryFee])
+    { id: "express", name: "Express Shipping", time: "2-3 business days", price: appliedCoupon?.freeShipping ? 0 : 100 },
+    { id: "overnight", name: "Overnight Shipping", time: "1 business day", price: appliedCoupon?.freeShipping ? 0 : 200 },
+  ], [subtotal, freeShippingThreshold, deliveryFee, appliedCoupon])
 
   const shippingCost = shippingMethods.find((m) => m.id === selectedShipping)?.price || 0
-  const total = subtotal + shippingCost
+  const discount = appliedCoupon?.discount || 0
+  const total = subtotal - discount + shippingCost
 
   React.useEffect(() => {
     if (items.length === 0) {
@@ -373,18 +415,84 @@ export default function CheckoutPage() {
                   })}
                 </div>
 
+                {/* Coupon Code */}
+                <div className="mb-4 pb-4 border-b border-border">
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between p-3 bg-success/10 border border-success/20 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Ticket className="h-4 w-4 text-success" />
+                        <div>
+                          <p className="text-sm font-medium text-success">{appliedCoupon.code}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {appliedCoupon.type === "percentage" && `${appliedCoupon.discount}% off`}
+                            {appliedCoupon.type === "fixed" && `${formatCurrency(appliedCoupon.discount)} off`}
+                            {appliedCoupon.type === "free_shipping" && "Free shipping"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveCoupon}
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleApplyCoupon} className="space-y-2">
+                      <Label htmlFor="coupon" className="text-sm">Coupon Code</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="coupon"
+                          placeholder="Enter code"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="submit"
+                          variant="outline"
+                          size="sm"
+                          disabled={applyCouponMutation.isPending || !couponCode.trim()}
+                          className="bg-transparent"
+                        >
+                          {applyCouponMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Apply"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
                 {/* Totals */}
                 <div className="space-y-3 pt-4 border-t border-border">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-medium">{formatCurrency(subtotal)}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-success">
+                      <span>Discount</span>
+                      <span>-{formatCurrency(discount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
                     <span className="font-medium">
-                      {shippingCost === 0 ? "Free" : formatCurrency(shippingCost)}
+                      {shippingCost === 0 ? (
+                        <span className="text-success">Free</span>
+                      ) : (
+                        formatCurrency(shippingCost)
+                      )}
                     </span>
                   </div>
+                  {appliedCoupon?.freeShipping && (
+                    <p className="text-xs text-success">Free shipping applied!</p>
+                  )}
                   <div className="flex justify-between text-lg font-semibold pt-3 border-t border-border">
                     <span>Total</span>
                     <span>{formatCurrency(total)}</span>
