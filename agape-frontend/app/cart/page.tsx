@@ -13,7 +13,7 @@ import { useProducts } from "@/lib/hooks/useProducts"
 import { formatCurrency } from "@/lib/utils"
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, subtotal } = useCart()
+  const { items, updateQuantity, removeItem, subtotal, deliveryFee, freeShippingThreshold } = useCart()
 
   // Fetch products to get full product details
   const { data: productsData } = useProducts({})
@@ -21,7 +21,7 @@ export default function CartPage() {
   const [promoApplied, setPromoApplied] = React.useState(false)
 
   const discount = promoApplied ? subtotal * 0.05 : 0
-  const shipping = subtotal > 500 ? 0 : 50
+  const shipping = subtotal > freeShippingThreshold ? 0 : deliveryFee
   const total = subtotal - discount + shipping
 
   const handleApplyPromo = (e: React.FormEvent) => {
@@ -158,9 +158,9 @@ export default function CartPage() {
                         <span className="font-medium">{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
                       </div>
 
-                      {subtotal < 500 && (
+                      {subtotal < freeShippingThreshold && (
                         <p className="text-xs text-muted-foreground">
-                          Add {formatCurrency(500 - subtotal)} more for free shipping
+                          Add {formatCurrency(freeShippingThreshold - subtotal)} more for free shipping
                         </p>
                       )}
 

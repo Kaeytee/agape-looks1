@@ -23,6 +23,7 @@ import mediaRoutes from './services/media/media.routes.js';
 import adminRoutes from './services/admin/admin.routes.js';
 import wishlistRoutes from './services/wishlist/wishlist.routes.js';
 import collectionsRoutes from './services/collections/collections.routes.js';
+import settingsRoutes from './services/settings/settings.routes.js';
 
 const app = express();
 
@@ -79,6 +80,7 @@ apiRouter.use('/cart', cartRoutes);
 apiRouter.use('/media', mediaRoutes);
 apiRouter.use('/wishlist', wishlistRoutes);
 apiRouter.use('/admin', adminRoutes);
+apiRouter.use('/settings', settingsRoutes);
 
 app.use(`/api/${config.app.apiVersion}`, apiRouter);
 

@@ -26,7 +26,16 @@ const sampleProducts = [
     reviewCount: 24,
     isFeatured: true,
     isLimited: false,
-    status: 'active'
+    status: 'active',
+    metadata: {
+      colors: ['Gold', 'Black'],
+      fabric_type: 'Beaded Lace',
+      materials: 'Cotton, Silk',
+      stock: 8,
+      is_featured: true,
+      is_limited: false,
+      color: 'Gold'
+    }
   },
   {
     sku: 'KNT-002',
@@ -46,7 +55,16 @@ const sampleProducts = [
     reviewCount: 18,
     isFeatured: true,
     isLimited: false,
-    status: 'active'
+    status: 'active',
+    metadata: {
+      colors: ['Multicolor', 'Red', 'Green'],
+      fabric_type: 'Beaded Lush Lace',
+      materials: 'Cotton',
+      stock: 5,
+      is_featured: true,
+      is_limited: false,
+      color: 'Multicolor'
+    }
   },
   {
     sku: 'KNT-003',
@@ -66,7 +84,16 @@ const sampleProducts = [
     reviewCount: 12,
     isFeatured: true,
     isLimited: true,
-    status: 'active'
+    status: 'active',
+    metadata: {
+      colors: ['Gold'],
+      fabric_type: 'Crystallized Luxury Lace',
+      materials: 'Silk, Gold Thread',
+      stock: 3,
+      is_featured: true,
+      is_limited: true,
+      color: 'Gold'
+    }
   },
   {
     sku: 'KNT-004',
@@ -86,7 +113,16 @@ const sampleProducts = [
     reviewCount: 8,
     isFeatured: false,
     isLimited: true,
-    status: 'active'
+    status: 'active',
+    metadata: {
+      colors: ['White', 'Gold'],
+      fabric_type: 'Ivory Beaded Fringe Lace',
+      materials: 'Cotton, Silk',
+      stock: 4,
+      is_featured: false,
+      is_limited: true,
+      color: 'White'
+    }
   },
   {
     sku: 'KNT-005',
@@ -106,7 +142,16 @@ const sampleProducts = [
     reviewCount: 15,
     isFeatured: false,
     isLimited: false,
-    status: 'active'
+    status: 'active',
+    metadata: {
+      colors: ['Blue', 'White'],
+      fabric_type: 'Two Toned Lace',
+      materials: 'Cotton',
+      stock: 10,
+      is_featured: false,
+      is_limited: false,
+      color: 'Blue'
+    }
   },
   {
     sku: 'LACE-001',
@@ -127,9 +172,183 @@ const sampleProducts = [
     isFeatured: true,
     isLimited: false,
     status: 'active',
+    metadata: {
+      colors: ['Black'],
+      fabric_type: 'Beaded Lace',
+      materials: 'Lace, Beads',
+      stock: 15,
+      is_featured: true,
+      is_limited: false,
+      color: 'Black'
+    },
     images: [
       { url: '/beaded-lace-style-black1.jpeg', alt: 'Beaded Lace Black - Style', type: 'main' },
       { url: '/beaded-lace-material-black1.jpeg', alt: 'Beaded Lace Black - Material', type: 'detail' }
+    ]
+  },
+  {
+    sku: 'LACE-002',
+    title: 'Beaded Lace Gold',
+    slug: 'beaded-lace-gold',
+    shortDescription: 'Luxurious gold beaded lace with shimmering details',
+    fullStory: 'Luxurious gold beaded lace with shimmering details, perfect for making a statement at any event.',
+    price: 1500.00,
+    currency: 'GHS',
+    weaveOrigin: 'Imported',
+    careInstructions: 'Dry clean only. Handle with care.',
+    dimensions: { width: 150, length: 500, unit: 'cm' },
+    tags: ['Luxury', 'Premium', 'Evening Wear', 'Gold'],
+    inventory: 20,
+    dispatchTime: '1-2 business days',
+    rating: 5.0,
+    reviewCount: 0,
+    isFeatured: true,
+    isLimited: false,
+    status: 'active',
+    metadata: {
+      colors: ['Gold'],
+      fabric_type: 'Beaded Lace',
+      materials: 'Lace, Beads',
+      stock: 20,
+      is_featured: true,
+      is_limited: false,
+      color: 'Gold'
+    },
+    images: [
+      { url: '/beaded-lace-style-gold.jpeg', alt: 'Beaded Lace Gold - Style', type: 'main' },
+      { url: '/beaded-lace-material-gold.jpeg', alt: 'Beaded Lace Gold - Material', type: 'detail' }
+    ]
+  },
+  {
+    sku: 'LACE-003',
+    title: 'Beaded Lace Purple',
+    slug: 'beaded-lace-purple',
+    shortDescription: 'Elegant purple beaded lace with intricate patterns',
+    fullStory: 'Elegant purple beaded lace with intricate patterns. A royal choice for weddings and special occasions.',
+    price: 1400.00,
+    currency: 'GHS',
+    weaveOrigin: 'Imported',
+    careInstructions: 'Dry clean only. Handle with care.',
+    dimensions: { width: 150, length: 500, unit: 'cm' },
+    tags: ['Luxury', 'Premium', 'Evening Wear', 'Purple'],
+    inventory: 20,
+    dispatchTime: '1-2 business days',
+    rating: 5.0,
+    reviewCount: 0,
+    isFeatured: true,
+    isLimited: false,
+    status: 'active',
+    metadata: {
+      colors: ['Other'],
+      fabric_type: 'Beaded Lace',
+      materials: 'Lace, Beads',
+      stock: 20,
+      is_featured: true,
+      is_limited: false,
+      color: 'Other'
+    },
+    images: [
+      { url: '/beaded-lace-style-purple.jpeg', alt: 'Beaded Lace Purple - Style', type: 'main' },
+      { url: '/beaded-lace-material-purple.jpeg', alt: 'Beaded Lace Purple - Material', type: 'detail' }
+    ]
+  },
+  {
+    sku: 'BRCD-001',
+    title: 'Brocade Green',
+    slug: 'brocade-green',
+    shortDescription: 'Rich green brocade fabric with elegant patterns',
+    fullStory: 'Rich green brocade fabric with elegant patterns. Durable and stylish for various traditional styles.',
+    price: 1800.00,
+    currency: 'GHS',
+    weaveOrigin: 'Imported',
+    careInstructions: 'Dry clean only. Handle with care.',
+    dimensions: { width: 150, length: 500, unit: 'cm' },
+    tags: ['Luxury', 'Premium', 'Brocade', 'Green'],
+    inventory: 20,
+    dispatchTime: '1-2 business days',
+    rating: 5.0,
+    reviewCount: 0,
+    isFeatured: true,
+    isLimited: false,
+    status: 'active',
+    metadata: {
+      colors: ['Other'],
+      fabric_type: 'Brocade',
+      materials: 'Brocade',
+      stock: 20,
+      is_featured: true,
+      is_limited: false,
+      color: 'Other'
+    },
+    images: [
+      { url: '/brocade-style-green.jpeg', alt: 'Brocade Green - Style', type: 'main' },
+      { url: '/brocade-material-green.jpeg', alt: 'Brocade Green - Material', type: 'detail' }
+    ]
+  },
+  {
+    sku: 'BRCD-002',
+    title: 'Champagne Brocade',
+    slug: 'champagne-brocade',
+    shortDescription: 'Sophisticated champagne brown brocade',
+    fullStory: 'Sophisticated champagne brown brocade. A subtle yet stunning choice for elegant wear.',
+    price: 2000.00,
+    currency: 'GHS',
+    weaveOrigin: 'Imported',
+    careInstructions: 'Dry clean only. Handle with care.',
+    dimensions: { width: 150, length: 500, unit: 'cm' },
+    tags: ['Luxury', 'Premium', 'Brocade', 'Champagne'],
+    inventory: 20,
+    dispatchTime: '1-2 business days',
+    rating: 5.0,
+    reviewCount: 0,
+    isFeatured: true,
+    isLimited: false,
+    status: 'active',
+    metadata: {
+      colors: ['Gold'],
+      fabric_type: 'Brocade',
+      materials: 'Brocade',
+      stock: 20,
+      is_featured: true,
+      is_limited: false,
+      color: 'Gold'
+    },
+    images: [
+      { url: '/champagne-brocade-style-brown.jpeg', alt: 'Champagne Brocade - Style', type: 'main' },
+      { url: '/champagne-brocade-material-brown.jpeg', alt: 'Champagne Brocade - Material', type: 'detail' }
+    ]
+  },
+  {
+    sku: 'LACE-004',
+    title: 'Two-Toned Lace Pink',
+    slug: 'two-toned-lace-pink',
+    shortDescription: 'Beautiful two-toned pink and white lace',
+    fullStory: 'Beautiful two-toned pink and white lace. Soft, feminine, and perfect for celebratory occasions.',
+    price: 1600.00,
+    currency: 'GHS',
+    weaveOrigin: 'Imported',
+    careInstructions: 'Dry clean only. Handle with care.',
+    dimensions: { width: 150, length: 500, unit: 'cm' },
+    tags: ['Luxury', 'Premium', 'Lace', 'Pink'],
+    inventory: 20,
+    dispatchTime: '1-2 business days',
+    rating: 5.0,
+    reviewCount: 0,
+    isFeatured: true,
+    isLimited: false,
+    status: 'active',
+    metadata: {
+      colors: ['Multicolor'],
+      fabric_type: 'Two Toned Lace',
+      materials: 'Lace',
+      stock: 20,
+      is_featured: true,
+      is_limited: false,
+      color: 'Multicolor'
+    },
+    images: [
+      { url: '/two-toned-lace-style-pink.jpeg', alt: 'Two-Toned Lace Pink - Style', type: 'main' },
+      { url: '/tow-toned-lace-material-pink-white.jpeg', alt: 'Two-Toned Lace Pink - Material', type: 'detail' }
     ]
   }
 ]
@@ -159,9 +378,9 @@ async function seedProducts() {
         INSERT INTO products (
           sku, title, slug, short_description, full_story, price, currency,
           weave_origin, care_instructions, dimensions, tags, inventory,
-          dispatch_time, rating, review_count, is_featured, is_limited, is_active
+          dispatch_time, rating, review_count, is_featured, is_limited, is_active, metadata
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
         ) RETURNING id, title
       `, [
         product.sku,
@@ -181,7 +400,8 @@ async function seedProducts() {
         product.reviewCount,
         product.isFeatured,
         product.isLimited,
-        product.status === 'active'
+        product.status === 'active',
+        JSON.stringify(product.metadata || {})
       ])
 
       logger.info(`✓ Created product: ${result.rows[0].title}`)

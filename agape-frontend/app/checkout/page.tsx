@@ -16,11 +16,7 @@ import { useProducts } from "@/lib/hooks/useProducts"
 import { formatCurrency } from "@/lib/utils"
 import type { ShippingAddress } from "@/lib/types"
 
-const shippingMethods = [
-  { id: "standard", name: "Standard Shipping", time: "5-7 business days", price: 50 },
-  { id: "express", name: "Express Shipping", time: "2-3 business days", price: 100 },
-  { id: "overnight", name: "Overnight Shipping", time: "1 business day", price: 200 },
-]
+
 
 const paymentMethods = [
   { id: "card", name: "Credit/Debit Card", icon: CreditCard, description: "Visa, Mastercard" },
@@ -28,7 +24,7 @@ const paymentMethods = [
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items, clearCart, subtotal } = useCart()
+  const { items, clearCart, subtotal, deliveryFee, freeShippingThreshold } = useCart()
   const { data: productsData } = useProducts({})
   const [currentStep, setCurrentStep] = React.useState<"shipping" | "payment" | "review">("shipping")
   const [isProcessing, setIsProcessing] = React.useState(false)
@@ -51,6 +47,18 @@ export default function CheckoutPage() {
 
   const [selectedShipping, setSelectedShipping] = React.useState("standard")
   const [selectedPayment, setSelectedPayment] = React.useState("momo")
+
+  // Dynamic shipping methods based on settings
+  const shippingMethods = React.useMemo(() => [
+    {
+      id: "standard",
+      name: "Standard Shipping",
+      time: "5-7 business days",
+      price: subtotal > freeShippingThreshold ? 0 : deliveryFee
+    },
+    { id: "express", name: "Express Shipping", time: "2-3 business days", price: 100 },
+    { id: "overnight", name: "Overnight Shipping", time: "1 business day", price: 200 },
+  ], [subtotal, freeShippingThreshold, deliveryFee])
 
   const shippingCost = shippingMethods.find((m) => m.id === selectedShipping)?.price || 0
   const total = subtotal + shippingCost
@@ -111,13 +119,12 @@ export default function CheckoutPage() {
               <React.Fragment key={step}>
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                      currentStep === step
-                        ? "bg-primary text-primary-foreground"
-                        : index < ["shipping", "payment", "review"].indexOf(currentStep)
-                          ? "bg-success text-success-foreground"
-                          : "bg-muted text-muted-foreground"
-                    }`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === step
+                      ? "bg-primary text-primary-foreground"
+                      : index < ["shipping", "payment", "review"].indexOf(currentStep)
+                        ? "bg-success text-success-foreground"
+                        : "bg-muted text-muted-foreground"
+                      }`}
                   >
                     {index + 1}
                   </div>
@@ -125,9 +132,8 @@ export default function CheckoutPage() {
                 </div>
                 {index < 2 && (
                   <div
-                    className={`w-12 h-0.5 ${
-                      index < ["shipping", "payment", "review"].indexOf(currentStep) ? "bg-success" : "bg-muted"
-                    }`}
+                    className={`w-12 h-0.5 ${index < ["shipping", "payment", "review"].indexOf(currentStep) ? "bg-success" : "bg-muted"
+                      }`}
                   />
                 )}
               </React.Fragment>
