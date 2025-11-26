@@ -22,11 +22,11 @@ import { ProductCardSkeleton } from "@/components/loading-skeleton"
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  
+
   // Fetch product from API
   const { data: product, isLoading, error } = useProduct(slug)
   const { data: allProductsData } = useProducts({ limit: 4 })
-  
+
   const [selectedImage, setSelectedImage] = React.useState(0)
   const [quantity, setQuantity] = React.useState(1)
   const [selectedVariant, setSelectedVariant] = React.useState<string | null>(null)
@@ -35,7 +35,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
   // Related products (excluding current product)
   const relatedProducts = allProductsData?.products?.filter((p) => p.id !== product?.id).slice(0, 4) || []
-  
+
   // Loading state
   if (isLoading) {
     return (
@@ -53,7 +53,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       </div>
     )
   }
-  
+
   // Error or not found
   if (error || !product) {
     return (
@@ -159,18 +159,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div>
                 <div className="flex gap-2 mb-3">
                   {product.isLimited && <Badge variant="limited">Limited Edition</Badge>}
-                  {product.tags.includes("Handwoven") && <Badge variant="gold">Handwoven</Badge>}
+                  {product.tags?.includes("Handwoven") && <Badge variant="gold">Handwoven</Badge>}
                 </div>
                 <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">{product.title}</h1>
-                {product.rating && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <span className="text-primary">★</span>
-                      <span className="font-medium">{product.rating.toFixed(1)}</span>
-                    </div>
-                    <span className="text-muted-foreground">({product.reviewCount} reviews)</span>
-                  </div>
-                )}
               </div>
 
               {/* Price */}
@@ -181,8 +172,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               {/* Story */}
               <p className="text-muted-foreground leading-relaxed">{product.fullStory}</p>
 
+              {/* Colors */}
+              {((product.metadata?.colors && product.metadata.colors.length > 0) || product.metadata?.color) && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Color</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(product.metadata?.colors || [product.metadata?.color]).filter((c): c is string => !!c).map((color) => {
+                      const colorMap: Record<string, string> = {
+                        'Gold': '#C19A36',
+                        'Blue': '#1E40AF',
+                        'Black': '#1A1A1A',
+                        'Multicolor': 'linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1, #FFA07A)',
+                        'Other': '#e5e7eb'
+                      }
+                      const hex = colorMap[color] || '#e5e7eb'
+                      return (
+                        <div key={color} className="flex items-center gap-2 border border-border rounded-full pl-1 pr-3 py-1">
+                          <div className="w-6 h-6 rounded-full border border-border" style={{ background: hex }} />
+                          <span className="text-sm">{color}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Variants */}
-              {product.variants.length > 0 && (
+              {product.variants?.length > 0 && (
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Size</Label>
                   <div className="flex gap-2">
@@ -232,9 +248,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <ShoppingCart className="h-5 w-5" />
                   Add to Cart
                 </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
+                <Button
+                  size="lg"
+                  variant="outline"
                   onClick={() => {
                     if (isInWishlist(product.id)) {
                       removeFromWishlist(product.id)
@@ -262,33 +278,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
-              {/* Additional Info Tabs */}
-              <Tabs defaultValue="details" className="pt-6">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="care">Care</TabsTrigger>
-                  <TabsTrigger value="shipping">Shipping</TabsTrigger>
-                </TabsList>
-                <TabsContent value="details" className="space-y-3 text-sm">
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-muted-foreground">SKU:</span>
-                    <span className="font-medium">{product.sku}</span>
-                    <span className="text-muted-foreground">Origin:</span>
-                    <span className="font-medium">{product.weaveOrigin}</span>
-                    <span className="text-muted-foreground">Dimensions:</span>
-                    <span className="font-medium">
-                      {product.dimensions.width} × {product.dimensions.length} {product.dimensions.unit}
-                    </span>
-                  </div>
-                </TabsContent>
-                <TabsContent value="care" className="text-sm text-muted-foreground">
-                  {product.careInstructions}
-                </TabsContent>
-                <TabsContent value="shipping" className="text-sm text-muted-foreground">
-                  Free shipping on orders over GHS 500. Standard delivery takes 5-7 business days. Express shipping
-                  available at checkout.
-                </TabsContent>
-              </Tabs>
+              {/* Additional Info */}
+              <div className="pt-6 border-t border-border mt-6">
+                <h3 className="font-medium mb-3">Product Details</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <span className="text-muted-foreground">SKU:</span>
+                  <span className="font-medium">{product.sku}</span>
+                  <span className="text-muted-foreground">Origin:</span>
+                  <span className="font-medium">{product.weaveOrigin}</span>
+                  <span className="text-muted-foreground">Dimensions:</span>
+                  <span className="font-medium">
+                    {product.dimensions.width} × {product.dimensions.length} {product.dimensions.unit}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 

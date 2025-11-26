@@ -25,6 +25,18 @@ export interface Product {
   isLimited?: boolean
   createdAt: string
   updatedAt: string
+  metadata?: {
+    color?: string
+    colors?: string[]
+    fabric_type?: string
+    subtitle?: string
+    short_description?: string
+    stock?: number
+    materials?: string
+    is_featured?: boolean
+    is_limited?: boolean
+    [key: string]: any
+  }
 }
 
 export interface ProductVariant {

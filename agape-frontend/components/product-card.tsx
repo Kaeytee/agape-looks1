@@ -27,30 +27,25 @@ export function ProductCard({
   const [isHovered, setIsHovered] = React.useState(false)
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
-  // Find style and material images
+  // Find default and hover images
   const findImagePair = () => {
-    // First, try to find a style image
-    const styleImage = product.images.find((img) =>
-      img.url.toLowerCase().includes('-style-')
-    )
-
-    if (styleImage) {
-      // If we have a style image, find the corresponding material image
-      // Convert: beaded-lace-style-black1.jpeg -> beaded-lace-material-black1.jpeg
-      const materialUrl = styleImage.url.replace(/-style-/i, '-material-')
-      const materialImage = product.images.find((img) => img.url === materialUrl)
-
-      return {
-        defaultImage: styleImage,
-        hoverImage: materialImage || styleImage, // Fallback to style if no material found
-      }
+    // Safety check for images
+    if (!product.images || !Array.isArray(product.images) || product.images.length === 0) {
+      return { defaultImage: undefined, hoverImage: undefined }
     }
 
-    // If no style image, just use the main/first image
-    const mainImage = product.images.find((img) => img.type === "main") || product.images[0]
+    // Sort images by order if available
+    const sortedImages = [...product.images].sort((a, b) => (a.order || 0) - (b.order || 0))
+
+    // Default image is always the first one
+    const defaultImage = sortedImages[0]
+
+    // Hover image is the second one if available, otherwise fallback to default
+    const hoverImage = sortedImages.length > 1 ? sortedImages[1] : defaultImage
+
     return {
-      defaultImage: mainImage,
-      hoverImage: mainImage, // No hover effect if only material image
+      defaultImage,
+      hoverImage,
     }
   }
 
@@ -89,6 +84,33 @@ export function ProductCard({
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
+
+          {/* Actions Overlay */}
+          <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 rounded-full shadow-sm"
+              onClick={handleWishlistToggle}
+            >
+              <Heart className={cn("h-4 w-4 transition-colors", inWishlist && "fill-destructive text-destructive")} />
+              <span className="sr-only">{inWishlist ? "Remove from wishlist" : "Add to wishlist"}</span>
+            </Button>
+            {onQuickView && (
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8 rounded-full shadow-sm"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onQuickView(product)
+                }}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="sr-only">Quick view</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Product Info */}

@@ -15,32 +15,37 @@ export function rateLimit(options = {}) {
   const windowMs = options.windowMs || config.rateLimit.windowMs;
   const max = options.max || config.rateLimit.maxRequests;
   const keyPrefix = options.keyPrefix || 'ratelimit';
-  
+
   return async (req, res, next) => {
+    // Skip rate limiting in development
+    if (config.app.env === 'development') {
+      return next();
+    }
+
     try {
       const redis = getRedisClient();
-      const identifier = options.keyGenerator 
-        ? options.keyGenerator(req) 
+      const identifier = options.keyGenerator
+        ? options.keyGenerator(req)
         : req.ip || req.connection.remoteAddress;
-      
+
       const key = `${keyPrefix}:${identifier}`;
-      
+
       // Increment counter
       const current = await redis.incr(key);
-      
+
       // Set expiry on first request
       if (current === 1) {
         await redis.pexpire(key, windowMs);
       }
-      
+
       // Get TTL
       const ttl = await redis.pttl(key);
-      
+
       // Set rate limit headers
       res.setHeader('X-RateLimit-Limit', max);
       res.setHeader('X-RateLimit-Remaining', Math.max(0, max - current));
       res.setHeader('X-RateLimit-Reset', new Date(Date.now() + ttl).toISOString());
-      
+
       if (current > max) {
         logger.warn('Rate limit exceeded', {
           identifier,
@@ -48,16 +53,16 @@ export function rateLimit(options = {}) {
           max,
           endpoint: req.path,
         });
-        
+
         throw new RateLimitError();
       }
-      
+
       next();
     } catch (error) {
       if (error instanceof RateLimitError) {
         return next(error);
       }
-      
+
       // If Redis fails, allow request through (fail open)
       logger.error('Rate limit check failed', { error: error.message });
       next();

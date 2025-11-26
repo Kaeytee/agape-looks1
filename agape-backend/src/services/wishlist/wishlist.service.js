@@ -16,15 +16,14 @@ import logger from '../../utils/logger.js';
 export async function getWishlist(userId) {
   const result = await query(
     `SELECT 
-       w.id,
+       w.id as wishlist_item_id,
        w.product_id,
        w.variant_id,
-       w.created_at,
-       p.title as product_title,
-       p.sku as product_sku,
-       p.price as product_price,
-       p.currency,
-       p.description,
+       w.created_at as added_at,
+       p.*,
+       (SELECT json_agg(pi.* ORDER BY pi.position) 
+        FROM product_images pi 
+        WHERE pi.product_id = p.id) as images,
        pv.variant_name,
        pv.price_delta,
        pv.sku as variant_sku,
@@ -38,23 +37,35 @@ export async function getWishlist(userId) {
   );
 
   return result.rows.map(row => ({
-    id: row.id,
-    productId: row.product_id,
-    variantId: row.variant_id,
-    product: {
-      title: row.product_title,
-      sku: row.product_sku,
-      price: parseFloat(row.product_price),
-      currency: row.currency,
-      description: row.description,
-    },
-    variant: row.variant_id ? {
+    id: row.product_id, // Use Product ID as the main ID for frontend compatibility
+    wishlistId: row.wishlist_item_id, // Keep track of wishlist item ID
+    sku: row.sku,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    shortDescription: row.metadata?.short_description || '',
+    fullStory: row.description,
+    price: parseFloat(row.price),
+    currency: row.currency,
+    weight: row.weight,
+    dimensions: row.dimensions,
+    inventory: row.inventory,
+    images: row.images || [],
+    tags: row.tags || [],
+    metadata: row.metadata || {},
+    isFeatured: row.metadata?.is_featured || false,
+    isLimited: row.metadata?.is_limited || false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    // Wishlist specific fields
+    addedAt: row.added_at,
+    selectedVariant: row.variant_id ? {
+      id: row.variant_id,
       name: row.variant_name,
       priceDelta: parseFloat(row.price_delta || 0),
       sku: row.variant_sku,
       stock: row.variant_stock,
     } : null,
-    addedAt: row.created_at,
   }));
 }
 
@@ -108,11 +119,11 @@ export async function addToWishlist(userId, productId, variantId = null) {
     [userId, productId, variantId]
   );
 
-  logger.info('Item added to wishlist', { 
-    userId, 
-    productId, 
+  logger.info('Item added to wishlist', {
+    userId,
+    productId,
     variantId,
-    wishlistItemId: result.rows[0].id 
+    wishlistItemId: result.rows[0].id
   });
 
   return result.rows[0];
@@ -121,20 +132,20 @@ export async function addToWishlist(userId, productId, variantId = null) {
 /**
  * Remove item from wishlist
  * @param {string} userId - User ID
- * @param {string} wishlistItemId - Wishlist item ID
+ * @param {string} productId - Product ID
  * @returns {Promise<void>}
  */
-export async function removeFromWishlist(userId, wishlistItemId) {
+export async function removeFromWishlist(userId, productId) {
   const result = await query(
-    'DELETE FROM wishlists WHERE id = $1 AND user_id = $2 RETURNING *',
-    [wishlistItemId, userId]
+    'DELETE FROM wishlists WHERE product_id = $1 AND user_id = $2 RETURNING *',
+    [productId, userId]
   );
 
   if (result.rows.length === 0) {
     throw new NotFoundError('Wishlist item not found');
   }
 
-  logger.info('Item removed from wishlist', { userId, wishlistItemId });
+  logger.info('Item removed from wishlist', { userId, productId });
 }
 
 /**

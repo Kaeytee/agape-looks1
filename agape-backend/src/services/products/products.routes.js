@@ -31,21 +31,31 @@ const createProductSchema = Joi.object({
   })).optional(),
   images: Joi.array().items(Joi.object({
     url: Joi.string().uri().required(),
-    publicId: Joi.string().required(),
-    altText: Joi.string().optional(),
+    publicId: Joi.string().optional().allow(null, ''),
+    altText: Joi.string().optional().allow(null, ''),
+    position: Joi.number().integer().min(0).optional(),
   })).optional(),
   metadata: Joi.object().optional(),
 });
 
 const updateProductSchema = Joi.object({
   title: Joi.string().min(3).max(500).optional(),
-  description: Joi.string().optional(),
+  description: Joi.string().optional().allow('', null),
   price: Joi.number().positive().optional(),
+  currency: Joi.string().length(3).optional(),
   weight: Joi.number().positive().optional(),
   dimensions: Joi.object().optional(),
-  collection_id: uuidSchema.optional(),
+  collectionId: Joi.alternatives().try(uuidSchema, Joi.allow(null)).optional(),
   is_active: Joi.boolean().optional(),
   metadata: Joi.object().optional(),
+  images: Joi.array().items(Joi.object({
+    url: Joi.string().uri().required(),
+    publicId: Joi.string().optional().allow(null, ''),
+    altText: Joi.string().optional().allow(null, ''),
+    position: Joi.number().integer().min(0).optional(),
+    id: Joi.string().optional(), // Allow ID if passed
+    productId: Joi.string().optional(), // Allow productId if passed
+  })).optional(),
 });
 
 const listQuerySchema = Joi.object({
@@ -55,11 +65,11 @@ const listQuerySchema = Joi.object({
   maxPrice: Joi.number().min(0).optional(),
   isFeatured: Joi.boolean().optional(),
   tags: Joi.alternatives().try(
-    Joi.string(),
+    Joi.string().allow(''),
     Joi.array().items(Joi.string())
   ).optional(),
   colors: Joi.alternatives().try(
-    Joi.string(),
+    Joi.string().allow(''),
     Joi.array().items(Joi.string())
   ).optional(),
   inStock: Joi.boolean().optional(),
@@ -86,6 +96,8 @@ router.get('/', validateQuery(listQuerySchema), productsController.listProducts)
 // Admin routes
 router.post('/', authenticate, requireAdmin, validateBody(createProductSchema), productsController.createProduct);
 router.patch('/:id', authenticate, requireAdmin, validateParams(Joi.object({ id: uuidSchema })), validateBody(updateProductSchema), productsController.updateProduct);
+router.put('/:id', authenticate, requireAdmin, validateParams(Joi.object({ id: uuidSchema })), validateBody(updateProductSchema), productsController.updateProduct);
+router.delete('/', authenticate, requireAdmin, productsController.deleteAllProducts);
 router.delete('/:id', authenticate, requireAdmin, validateParams(Joi.object({ id: uuidSchema })), productsController.deleteProduct);
 
 export default router;

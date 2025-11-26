@@ -32,6 +32,16 @@ const transformProductImages = (product) => {
     order: img.position || img.order || 0
   }));
 
+  // Ensure variants is always an array
+  if (!product.variants || !Array.isArray(product.variants)) {
+    product.variants = [];
+  }
+
+  // Ensure tags is always an array
+  if (!product.tags || !Array.isArray(product.tags)) {
+    product.tags = [];
+  }
+
   return product;
 };
 
@@ -92,6 +102,15 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   res.json({
     status: 'success',
     message: 'Product deleted successfully',
+  });
+});
+
+export const deleteAllProducts = asyncHandler(async (req, res) => {
+  const count = await productsService.deleteAllProducts(req.user.id);
+
+  res.json({
+    status: 'success',
+    message: `${count} products deleted successfully`,
   });
 });
 

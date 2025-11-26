@@ -74,24 +74,32 @@ export const collectionService = {
 	 */
 	async updateCollection(id, data) {
 		try {
-			const { name, slug, description, image, featured, color } = data
+			const allowedColumns = ['name', 'slug', 'description', 'image', 'featured', 'color']
+			const updates = []
+			const values = []
+			let paramIndex = 1
 
+			for (const column of allowedColumns) {
+				if (data[column] !== undefined) {
+					updates.push(`${column} = $${paramIndex}`)
+					values.push(data[column])
+					paramIndex++
+				}
+			}
+
+			if (updates.length === 0) {
+				return null // No updates needed
+			}
+
+			values.push(id)
 			const sql = `
         UPDATE collections 
-        SET name = $1, slug = $2, description = $3, image = $4, featured = $5, color = $6, updated_at = NOW()
-        WHERE id = $7
+        SET ${updates.join(', ')}, updated_at = NOW()
+        WHERE id = $${paramIndex}
         RETURNING *
       `
 
-			const result = await query(sql, [
-				name,
-				slug,
-				description,
-				image,
-				featured,
-				color,
-				id
-			])
+			const result = await query(sql, values)
 
 			return result.rows[0]
 		} catch (error) {
@@ -110,6 +118,20 @@ export const collectionService = {
 			return result.rows[0]
 		} catch (error) {
 			logger.error(`Error deleting collection ${id}:`, error)
+			throw error
+		}
+	},
+
+	/**
+	 * Delete all collections
+	 */
+	async deleteAllCollections() {
+		try {
+			const sql = `DELETE FROM collections RETURNING id`
+			const result = await query(sql)
+			return result.rowCount
+		} catch (error) {
+			logger.error('Error deleting all collections:', error)
 			throw error
 		}
 	}

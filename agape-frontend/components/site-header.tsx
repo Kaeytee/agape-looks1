@@ -43,6 +43,11 @@ export function SiteHeader() {
   const { itemCount, openCart } = useCart()
   const { itemCount: wishlistCount } = useWishlist()
   const headerRef = React.useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Logout handler
   const handleLogout = () => {
@@ -163,7 +168,7 @@ export function SiteHeader() {
               </Button>
 
               {/* User Profile Dropdown / Login - Hides third (below sm) */}
-              {isAuthenticated ? (
+              {mounted && isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="hidden sm:inline-flex gap-2">
@@ -288,7 +293,7 @@ export function SiteHeader() {
                   </Link>
                 ))}
                 <div className="pt-4 border-t border-border space-y-3">
-                  {isAuthenticated ? (
+                  {mounted && isAuthenticated ? (
                     <>
                       <Button variant="ghost" asChild className="w-full justify-start">
                         <Link href="/account">

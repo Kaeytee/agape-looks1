@@ -21,7 +21,7 @@ export function startHealthPinger() {
   }
 
   const healthUrl = `http://localhost:${config.app.port}/healthz`;
-  const pingIntervalMs = 5000; // 5 seconds
+  const pingIntervalMs = 300000; // 5 minutes
 
   logger.info(`Starting health pinger (every ${pingIntervalMs / 1000}s)`);
 

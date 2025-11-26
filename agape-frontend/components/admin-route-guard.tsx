@@ -24,38 +24,22 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const [isChecking, setIsChecking] = React.useState(true)
-  const [isAuthorized, setIsAuthorized] = React.useState(false)
 
   React.useEffect(() => {
-    // Wait for auth to finish loading
-    if (isLoading) return
-
-    const checkAdminAccess = () => {
-      // If no user, redirect to login
+    // Only check when auth loading is complete
+    if (!isLoading) {
       if (!user) {
-        console.warn("No user found. Redirecting to login...")
+        // No user, redirect to login
         router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
-        return
-      }
-
-      // Check if user has admin role
-      if (user.role !== "admin") {
-        console.warn("User is not an admin. Redirecting to home...")
+      } else if (user.role !== "admin") {
+        // User exists but not admin, redirect home
         router.push("/")
-        return
       }
-
-      // User is authenticated and is an admin
-      setIsAuthorized(true)
-      setIsChecking(false)
     }
-
-    checkAdminAccess()
   }, [user, isLoading, router, pathname])
 
   // Show loading state while checking authentication
-  if (isChecking) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -66,15 +50,10 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
     )
   }
 
-  // If not authorized, don't render anything (redirect is in progress)
-  if (!isAuthorized) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <p className="text-muted-foreground">Redirecting...</p>
-        </div>
-      </div>
-    )
+  // If not authorized (and not loading), don't render children
+  // The useEffect will handle the redirect
+  if (!user || user.role !== "admin") {
+    return null
   }
 
   // User is authorized, render the admin page

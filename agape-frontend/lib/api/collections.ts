@@ -34,3 +34,7 @@ export async function updateCollection(id: string, data: Partial<Collection>): P
 export async function deleteCollection(id: string): Promise<void> {
 	await apiClient.delete(`/collections/${id}`)
 }
+
+export async function deleteAllCollections(): Promise<void> {
+	await apiClient.delete("/collections")
+}

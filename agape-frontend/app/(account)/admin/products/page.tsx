@@ -19,16 +19,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useProducts, useDeleteProduct } from "@/lib/hooks/useProducts"
+import { useProducts, useDeleteProduct, useDeleteAllProducts } from "@/lib/hooks/useProducts"
 import { toast } from "sonner"
 import { AdminRouteGuard } from "@/components/admin-route-guard"
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+  const [clearDialogOpen, setClearDialogOpen] = React.useState(false)
   const [productToDelete, setProductToDelete] = React.useState<any>(null)
   const { data: productsData, isLoading } = useProducts({})
   const deleteProduct = useDeleteProduct()
+  const deleteAllProducts = useDeleteAllProducts()
 
   const handleDeleteClick = (product: any) => {
     setProductToDelete(product)
@@ -45,6 +47,16 @@ export default function AdminProductsPage() {
       setProductToDelete(null)
     } catch (error) {
       toast.error("Failed to delete product")
+    }
+  }
+
+  const handleClearConfirm = async () => {
+    try {
+      await deleteAllProducts.mutateAsync()
+      toast.success("All products cleared successfully")
+      setClearDialogOpen(false)
+    } catch (error) {
+      toast.error("Failed to clear products")
     }
   }
 
@@ -70,12 +82,23 @@ export default function AdminProductsPage() {
               <p className="text-muted-foreground">Manage your product inventory</p>
             </div>
           </div>
-          <Button asChild className="gap-2">
-            <Link href="/admin/products/new">
-              <Plus className="h-4 w-4" />
-              Add Product
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setClearDialogOpen(true)}
+              disabled={filteredProducts.length === 0}
+              className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear Products
+            </Button>
+            <Button asChild className="gap-2">
+              <Link href="/admin/products/new">
+                <Plus className="h-4 w-4" />
+                Add Product
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -198,6 +221,28 @@ export default function AdminProductsPage() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Delete Product
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Clear All Confirmation Dialog */}
+        <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear All Products?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete ALL products from your inventory.
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleClearConfirm}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Clear All Products
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

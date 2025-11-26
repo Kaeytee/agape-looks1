@@ -21,6 +21,11 @@ export function AccountSidebar() {
 	const { user, logout } = useAuth();
 	const isAdmin = user?.role === 'admin';
 	const [open, setOpen] = useState(false);
+	const [mounted, setMounted] = useState(false);
+
+	React.useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	const links = [
 		{
@@ -105,7 +110,7 @@ export function AccountSidebar() {
 							}}
 						/>
 
-						{isAdmin && (
+						{mounted && isAdmin && (
 							<>
 								<div className="my-2 border-t border-neutral-200 dark:border-neutral-700" />
 								<div className="px-2 py-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
@@ -117,7 +122,7 @@ export function AccountSidebar() {
 							</>
 						)}
 
-						{!isAdmin && (
+						{mounted && !isAdmin && (
 							<>
 								<div className="my-2 border-t border-neutral-200 dark:border-neutral-700" />
 								<div className="px-2 py-1 text-xs font-semibold text-neutral-500 uppercase tracking-wider">

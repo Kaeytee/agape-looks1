@@ -56,10 +56,13 @@ export async function createProduct({
       logger.info('Collection verified', { collection: collectionCheck.rows[0] });
     }
 
+    // Extract stock from metadata if present
+    const inventory = metadata?.stock || 0;
+
     // Create product
     const productResult = await client.query(
-      `INSERT INTO products (id, sku, title, slug, description, price, currency, weight, dimensions, collection_id, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `INSERT INTO products (id, sku, title, slug, description, price, currency, weight, dimensions, collection_id, inventory, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         uuidv4(),
@@ -72,6 +75,7 @@ export async function createProduct({
         weight,
         JSON.stringify(dimensions || {}),
         collectionId,
+        inventory,
         JSON.stringify(metadata),
       ]
     );
@@ -118,8 +122,8 @@ export async function createProduct({
       [adminId, product.id, JSON.stringify({ sku, title, price })]
     );
 
-    // Invalidate product cache
-    await invalidateProductCache();
+    // No need to invalidate cache for new product since list is not cached
+    // and product specific cache doesn't exist yet
 
     logger.info('Product created', { productId: product.id, sku, title });
 
@@ -155,10 +159,8 @@ export async function getProduct(productIdOrSlug, includeInactive = false) {
   if (isUuid) {
     whereClause = 'p.id = $1';
   } else {
-    // Try to match by SKU or slug (if it exists)
-    // We'll check if the 'slug' column exists by handling the error or just assuming SKU for now since we saw SKU in create
-    // But to be robust, let's try SKU first.
-    whereClause = 'p.sku = $1';
+    // Try to match by SKU or slug
+    whereClause = '(p.sku = $1 OR p.slug = $1)';
   }
 
   // Fetch from database
@@ -256,15 +258,15 @@ export async function listProducts(filters = {}) {
     paramIndex++;
   }
 
-  // Filter by tags (array overlap)
+  // Filter by tags (array overlap) or fabric_type in metadata
   // Ensure tags is an array (could be string from query params)
   let tagsArray = tags;
   if (tags && typeof tags === 'string') {
     tagsArray = tags.split(',').map(t => t.trim());
   }
   if (tagsArray && tagsArray.length > 0) {
-    // Cast the parameter as text array for PostgreSQL
-    whereClause += ` AND p.tags && $${paramIndex}::text[]`;
+    // Check if tag is in p.tags OR if metadata->>'fabric_type' matches any of the tags
+    whereClause += ` AND (p.tags && $${paramIndex}::text[] OR p.metadata->>'fabric_type' = ANY($${paramIndex}::text[]))`;
     params.push(tagsArray);
     paramIndex++;
   }
@@ -276,8 +278,8 @@ export async function listProducts(filters = {}) {
     colorsArray = colors.split(',').map(c => c.trim());
   }
   if (colorsArray && colorsArray.length > 0) {
-    // Cast the parameter as text array for PostgreSQL
-    whereClause += ` AND p.tags && $${paramIndex}::text[]`;
+    // Check if color is in p.tags OR if metadata->>'color' matches any of the colors
+    whereClause += ` AND (p.tags && $${paramIndex}::text[] OR p.metadata->>'color' = ANY($${paramIndex}::text[]))`;
     params.push(colorsArray);
     paramIndex++;
   }
@@ -328,17 +330,34 @@ export async function updateProduct(productId, updates, adminId) {
 
     const oldProduct = existing.rows[0];
 
+    // Map camelCase to snake_case for database
+    const dbUpdates = { ...updates };
+    if (updates.collectionId !== undefined) {
+      dbUpdates.collection_id = updates.collectionId;
+      delete dbUpdates.collectionId;
+    }
+
     // Build update query
     const updateFields = [];
     const params = [productId];
     let paramIndex = 2;
 
-    const allowedFields = ['title', 'description', 'price', 'weight', 'dimensions', 'collection_id', 'is_active', 'metadata'];
+    const allowedFields = ['title', 'description', 'price', 'currency', 'weight', 'dimensions', 'collection_id', 'is_active', 'metadata', 'inventory'];
 
     for (const field of allowedFields) {
-      if (updates[field] !== undefined) {
+      if (dbUpdates[field] !== undefined) {
         updateFields.push(`${field} = $${paramIndex}`);
-        params.push(['dimensions', 'metadata'].includes(field) ? JSON.stringify(updates[field]) : updates[field]);
+        params.push(['dimensions', 'metadata'].includes(field) ? JSON.stringify(dbUpdates[field]) : dbUpdates[field]);
+        paramIndex++;
+      }
+    }
+
+    // Sync stock to inventory if metadata.stock is updated
+    if (dbUpdates.metadata && dbUpdates.metadata.stock !== undefined) {
+      // Check if inventory is not already being updated directly
+      if (dbUpdates.inventory === undefined) {
+        updateFields.push(`inventory = $${paramIndex}`);
+        params.push(dbUpdates.metadata.stock);
         paramIndex++;
       }
     }
@@ -353,11 +372,29 @@ export async function updateProduct(productId, updates, adminId) {
       params
     );
 
+    const product = result.rows[0];
+
+    // Handle images update if provided
+    if (updates.images && updates.images.length > 0) {
+      // Delete existing images for this product
+      await client.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
+
+      // Insert new images
+      for (let i = 0; i < updates.images.length; i++) {
+        const image = updates.images[i];
+        await client.query(
+          `INSERT INTO product_images (product_id, url, public_id, alt_text, position)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [productId, image.url, image.publicId, image.altText || '', i]
+        );
+      }
+    }
+
     // Create audit log
     await client.query(
       `INSERT INTO audit_logs (actor_id, actor_role, action, entity, entity_id, changes)
        VALUES ($1, 'admin', 'product_updated', 'product', $2, $3)`,
-      [adminId, productId, JSON.stringify({ before: oldProduct, after: updates })]
+      [adminId, productId, JSON.stringify({ before: oldProduct, after: dbUpdates })]
     );
 
     // Invalidate cache
@@ -365,7 +402,7 @@ export async function updateProduct(productId, updates, adminId) {
 
     logger.info('Product updated', { productId, adminId });
 
-    return result.rows[0];
+    return product;
   });
 }
 
@@ -396,6 +433,32 @@ export async function deleteProduct(productId, adminId) {
     logger.info('Product deleted', { productId, adminId });
 
     return result.rows[0];
+  });
+}
+
+/**
+ * Deletes all products (admin only)
+ */
+export async function deleteAllProducts(adminId) {
+  return await transaction(async (client) => {
+    // Delete all products (soft delete)
+    const result = await client.query(
+      'UPDATE products SET is_active = FALSE, updated_at = NOW() RETURNING id'
+    );
+
+    // Create audit log
+    await client.query(
+      `INSERT INTO audit_logs (actor_id, actor_role, action, entity, entity_id, changes)
+       VALUES ($1, 'admin', 'all_products_deleted', 'product', NULL, $2)`,
+      [adminId, JSON.stringify({ count: result.rowCount })]
+    );
+
+    // Invalidate all product caches
+    await invalidateProductCache();
+
+    logger.info('All products deleted', { adminId, count: result.rowCount });
+
+    return result.rowCount;
   });
 }
 
@@ -436,11 +499,10 @@ async function invalidateProductCache(productId = null) {
     if (productId) {
       await redis.del(`product:${productId}`);
     } else {
-      // Invalidate all product caches (pattern matching)
-      const keys = await redis.keys('product:*');
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
+      // Do not use KEYS command as it blocks Redis
+      // If we need to invalidate multiple products, we should use a different strategy
+      // e.g. a set of product keys, or just let them expire
+      logger.warn('invalidateProductCache called without productId - skipping global invalidation to prevent blocking');
     }
 
     logger.debug('Product cache invalidated', { productId });
@@ -485,6 +547,7 @@ export default {
   listProducts,
   updateProduct,
   deleteProduct,
+  deleteAllProducts,
   searchProducts,
   getCategories,
 };

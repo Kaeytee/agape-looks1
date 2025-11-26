@@ -129,9 +129,9 @@ const config = {
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000, // 1 minute
     // Higher limits for development, lower for production
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || (process.env.NODE_ENV === 'production' ? 100 : 1000),
-    authMax: parseInt(process.env.RATE_LIMIT_AUTH_MAX, 10) || (process.env.NODE_ENV === 'production' ? 5 : 50),
-    adminMax: parseInt(process.env.RATE_LIMIT_ADMIN_MAX, 10) || (process.env.NODE_ENV === 'production' ? 200 : 2000),
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || (process.env.NODE_ENV === 'production' ? 100 : 5000),
+    authMax: parseInt(process.env.RATE_LIMIT_AUTH_MAX, 10) || (process.env.NODE_ENV === 'production' ? 5 : 100),
+    adminMax: parseInt(process.env.RATE_LIMIT_ADMIN_MAX, 10) || (process.env.NODE_ENV === 'production' ? 200 : 10000),
   },
 
   // ===========================

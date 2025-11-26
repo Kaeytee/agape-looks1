@@ -32,15 +32,17 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { AdminRouteGuard } from "@/components/admin-route-guard"
-import { useCollections, useDeleteCollection } from "@/lib/hooks/useCollections"
+import { useCollections, useDeleteCollection, useDeleteAllCollections } from "@/lib/hooks/useCollections"
 import { type Collection } from "@/lib/api/collections"
 import { toast } from "sonner"
 
 export default function AdminCollectionsPage() {
 	const { data: collections, isLoading } = useCollections()
 	const deleteCollection = useDeleteCollection()
+	const deleteAllCollections = useDeleteAllCollections()
 	const [searchQuery, setSearchQuery] = React.useState("")
 	const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+	const [clearDialogOpen, setClearDialogOpen] = React.useState(false)
 	const [collectionToDelete, setCollectionToDelete] = React.useState<Collection | null>(null)
 
 	const filteredCollections = collections?.filter((collection) =>
@@ -66,6 +68,16 @@ export default function AdminCollectionsPage() {
 		}
 	}
 
+	const handleClearConfirm = async () => {
+		try {
+			await deleteAllCollections.mutateAsync()
+			toast.success("All collections cleared successfully")
+			setClearDialogOpen(false)
+		} catch (error) {
+			toast.error("Failed to clear collections")
+		}
+	}
+
 	return (
 		<AdminRouteGuard>
 			<div className="flex flex-col gap-6">
@@ -82,12 +94,23 @@ export default function AdminCollectionsPage() {
 							<p className="text-muted-foreground">Manage your product collections</p>
 						</div>
 					</div>
-					<Button asChild className="gap-2">
-						<Link href="/admin/collections/new">
-							<Plus className="h-4 w-4" />
-							Add Collection
-						</Link>
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							variant="secondary"
+							onClick={() => setClearDialogOpen(true)}
+							disabled={filteredCollections.length === 0}
+							className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+						>
+							<Trash2 className="h-4 w-4 mr-2" />
+							Clear Collections
+						</Button>
+						<Button asChild className="gap-2">
+							<Link href="/admin/collections/new">
+								<Plus className="h-4 w-4" />
+								Add Collection
+							</Link>
+						</Button>
+					</div>
 				</div>
 
 				{/* Search */}
@@ -198,6 +221,28 @@ export default function AdminCollectionsPage() {
 								className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							>
 								Delete Collection
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+
+				{/* Clear All Confirmation Dialog */}
+				<AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>Clear All Collections?</AlertDialogTitle>
+							<AlertDialogDescription>
+								This will permanently delete ALL collections.
+								This action cannot be undone.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={handleClearConfirm}
+								className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							>
+								Clear All Collections
 							</AlertDialogAction>
 						</AlertDialogFooter>
 					</AlertDialogContent>

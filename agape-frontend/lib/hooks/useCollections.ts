@@ -5,6 +5,7 @@ import {
 	createCollection,
 	updateCollection,
 	deleteCollection,
+	deleteAllCollections,
 	type Collection
 } from "@/lib/api/collections"
 
@@ -48,6 +49,16 @@ export function useDeleteCollection() {
 	const queryClient = useQueryClient()
 	return useMutation({
 		mutationFn: deleteCollection,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["collections"] })
+		},
+	})
+}
+
+export function useDeleteAllCollections() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: deleteAllCollections,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["collections"] })
 		},

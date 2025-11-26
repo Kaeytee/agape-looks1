@@ -121,3 +121,21 @@ export function useDeleteProduct() {
     },
   })
 }
+
+/**
+ * Hook to delete all products (admin)
+ */
+export function useDeleteAllProducts() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: productsService.deleteAllProducts,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast.success('All products deleted successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete all products')
+    },
+  })
+}

@@ -82,5 +82,17 @@ export const collectionsController = {
 			success: true,
 			message: 'Collection deleted successfully'
 		})
+	}),
+
+	/**
+	 * Delete all collections
+	 */
+	deleteAllCollections: asyncHandler(async (req, res) => {
+		const count = await collectionService.deleteAllCollections()
+
+		res.json({
+			success: true,
+			message: `${count} collections deleted successfully`
+		})
 	})
 }

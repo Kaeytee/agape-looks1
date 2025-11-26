@@ -180,6 +180,13 @@ class ProductsService {
   async deleteProduct(id: string): Promise<void> {
     await apiClient.delete(`/products/${id}`)
   }
+
+  /**
+   * Delete all products (Admin only)
+   */
+  async deleteAllProducts(): Promise<void> {
+    await apiClient.delete('/products')
+  }
 }
 
 // Export singleton instance

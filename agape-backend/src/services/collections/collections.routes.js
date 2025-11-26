@@ -11,6 +11,7 @@ router.get('/:slug', collectionsController.getCollectionBySlug)
 // Admin routes
 router.post('/', authenticate, requireRole('admin'), collectionsController.createCollection)
 router.put('/:id', authenticate, requireRole('admin'), collectionsController.updateCollection)
+router.delete('/', authenticate, requireRole('admin'), collectionsController.deleteAllCollections)
 router.delete('/:id', authenticate, requireRole('admin'), collectionsController.deleteCollection)
 
 export default router
